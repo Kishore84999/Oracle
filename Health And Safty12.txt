@@ -1,0 +1,108 @@
+SELECT Regexp_substr(his.incident_no, '\d+', 1)    INCIDENT_NO,
+       To_char(his.incident_date, 'dd-mm-yyyy')    INCIDENT_DATE,
+	   CASE
+         WHEN Instr(loc.location_name, '_') > 1 THEN
+         Substr(loc.location_name, 1, Instr(loc.location_name, '_') - 1)
+         ELSE loc.location_name
+       END
+                                                                     LOCATION_NAME,
+       	his.attribute4                                               INCIDENT_TYPE,	
+		his.attribute1                                               DIRECTORATE,
+		HIS.attribute2                                               SECTION1,
+		location_type.meaning                                        LOCATION_TYPE,
+		Trim(Replace(HA.description, 'ACTION', Chr(13)||'ACTION'))   ACTION,
+		HIP.injury_mechanism_code                                    INJURY,
+		lookup_injury.meaning                                        INJURY_NATURE,
+		LOOKUP_KIND.meaning                                          KIND,
+		hapf.name                                                    JOB_TITLE,
+		(SELECT FLV.MEANING 
+		      FROM FND_LOOKUP_VALUES FLV 
+           WHERE FLV.LOOKUP_TYPE ='SEX' AND FLV.LOOKUP_CODE=LEG_INFO.SEX and FLV.LANGUAGE='US'
+                              AND ROWNUM=1) AS                        GENDER ,
+       PPN.FULL_NAME			,				  
+	   PAPF.PERSON_NUMBER,
+	   (SELECT  HL.Meaning FROM HR_LOOKUPS HL WHERE  HL.lookup_type='SYSTEM_PERSON_TYPE'
+           AND PAAF.SYSTEM_PERSON_TYPE=HL.LOOKUP_CODE ) AS  WORKER_TYPE ,
+		   
+	   extract(year from sysdate)- extract(year from PP.DATE_OF_BIRTH) AGE,
+		   --(year from to_date('15/10/2001','dd/mm/rrrr'))
+		PE.ETHNICITY,
+	   lookup_class.meaning       CALSSIFICATION,
+	   
+	   
+       his.attribute1                                                 sUMMARY,       
+       hapf.name                                                      position,
+       his.reporter_type_code,       
+       HIS.severity_level_code,       
+       HIP.injury_mechanism_code,       
+       papf.person_id,
+       ha.description
+       
+       
+-- ,Upper(trim(:p_directorate)),upper(trim(his.ATTRIBUTE1))
+FROM   hns_incidents_summary HIS,
+       hns_incidents_detail HID,
+       hr_locations_all_f_vl loc,
+       per_all_people_f papf,
+	   per_people_legislative_f leg_info,
+	   per_person_names_f ppn,
+       per_all_assignments_f paaf,
+	   PER_PERSONS PP,
+	   PER_ETHNICITIES PE,
+       hr_all_positions_f_vl hapf,
+       fnd_lookup_values lookup_class,
+       hns_injured_persons_summary HIPS,
+       hns_injured_persons HIP,
+       fnd_lookup_values lookup_kind,
+       hns_injured_person_parts HIPP,
+       fnd_lookup_values lookup_injury,
+       hns_actions HA,
+       fnd_lookup_values location_type,
+       hr_location_extra_info loc_ei
+WHERE 1=1 
+
+       AND   papf.person_id =ppn.person_id
+	   AND   ppn.name_type = 'GLOBAL'
+       AND   papf.person_id = leg_info.person_id(+)
+       AND   paaf.LEGISLATION_CODE = LEG_INFO.LEGISLATION_CODE(+)
+	   AND   PAPF.PERSON_ID =PP.PERSON_ID
+	   AND   PAPF.PERSON_ID =PE.PERSON_ID(+)
+	   AND  Trunc(:p_end)  BETWEEN ppn.EFFECTIVE_START_DATE AND NVL(ppn.EFFECTIVE_END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+       AND   Trunc(:p_end)  BETWEEN LEG_INFO.EFFECTIVE_START_DATE(+) AND NVL(LEG_INFO.EFFECTIVE_END_DATE(+),TO_DATE('31-12-4712','DD-MM-YYYY'))
+
+       --AND Upper(Trim(his.attribute1)) = Upper(Trim(:p_directorate))
+       AND HID.incident_id = HIS.incident_id
+       AND loc.location_id = his.location_id
+       AND Trunc(:p_end) BETWEEN Trunc(loc.effective_start_date) AND
+                                 Trunc(loc.effective_end_date)
+       AND papf.person_id = hip.inci_inj_person_id
+       AND Trunc(:p_end) BETWEEN Trunc(papf.effective_start_date) AND
+                                 Trunc(papf.effective_end_date)
+       AND paaf.assignment_type IN ( 'E', 'C' ) --as per RD
+       AND papf.person_id = paaf.person_id
+       AND Trunc(:p_end) BETWEEN Trunc(paaf.effective_start_date) AND
+                                 Trunc(paaf.effective_end_date)
+       AND paaf.primary_flag = 'Y' --as per RD
+       AND hapf.position_id(+) = paaf.position_id  --data maybe null
+       AND Trunc(:p_end) BETWEEN Trunc(hapf.effective_start_date(+)) AND
+                                 Trunc(hapf.effective_end_date(+))
+       AND lookup_class.lookup_code(+) = HIS.severity_level_code
+       AND lookup_class.lookup_type(+) = 'ORA_HNS_LEVEL_SEVERITY'
+       AND HIPs.incident_detail_id(+) = HID.incident_detail_id --data maybe null
+       AND lookup_kind.lookup_type(+) = 'ORA_HNS_MECHANISM'
+       AND lookup_kind.lookup_code(+) = HIP.injury_mechanism_code --data maybe null
+       AND hip.inj_person_summary_id(+) = hips.inj_person_summary_id
+       AND hipp.injured_person_id(+) = hip.injured_person_id --data maybe null
+       AND lookup_injury.lookup_type(+) = 'ORA_HNS_NATURE_OF_INJURY'
+       AND lookup_injury.lookup_code(+) = hipp.injury_nature_code --data maybe null
+       AND ha.incident_id(+) = his.incident_id --data maybe null
+       AND location_type.lookup_code(+) = loc_ei.lei_information11
+       AND location_type.lookup_type(+) = 'JEES_STREET_TYPES'
+       AND loc_ei.location_id(+) = loc.location_id --data maybe null
+       AND hip.inj_person_type_code(+) = 'ORA_EMPLOYEE' --as per RD
+       AND ( Upper(his.attribute4) LIKE'%AGGRESSIVE%' --as per RD
+              OR Upper(his.attribute4) LIKE 'BOTH%' ) --as per RD
+       AND Trunc(his.incident_date) BETWEEN Trunc(:p_start) AND Trunc(:p_end)
+       AND hip.deleted_flag(+) <> 'Y' --as per RD
+ORDER  BY loc.location_name,
+          his.incident_date

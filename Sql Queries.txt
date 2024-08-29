@@ -1,0 +1,15 @@
+select * from per_users
+/
+select haou.*,hac.CLASSIFICATION_CODE
+from hr_all_organization_units haou,
+    HR_ORG_UNIT_CLASSIFICATIONS_F hac
+
+where 1=1
+--and haou.name = 'Cummins Inc.'
+and haou.organization_id = hac.organization_id
+and sysdate between hac.effective_start_date and hac.effective_end_date
+
+/
+
+
+select * from per_legislative_data_groups_tl

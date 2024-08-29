@@ -1,0 +1,548 @@
+------------------
+HDL Error Tables
+-----------------
+SELECT fr.key_source_owner, fr.key_source_id, l.msg_text
+  FROM   fusion.hrc_dl_message_lines l
+  ,      fusion.hrc_dl_data_set_bus_objs  bo
+  ,      fusion.hrc_dl_data_sets          ds
+  ,      fusion.hrc_dl_physical_lines pl
+  ,      fusion.hrc_dl_file_rows     fr
+  ,      fusion.hrc_dl_file_lines    fl
+  WHERE  l.message_source_table_name = 'HRC_DL_PHYSICAL_LINES'
+  AND    bo.data_set_bus_obj_id      = l.data_set_bus_obj_id
+  AND    ds.data_set_id              = bo.data_set_id
+  AND    pl.physical_line_id   = l.message_source_line_id                                     
+  AND    fr.row_id             = pl.row_id
+  AND    fl.line_id            = fr.line_id
+  And    ds.ucm_content_id = :ID
+ 
+ ---------------
+ Absence Tables
+ ----------------
+ FROM PER_ALL_PEOPLE_F PAPF
+,PER_PERSON_NAMES_F PPNF
+     ,PER_PERIODS_OF_SERVICE PPOS
+	 ,ANC_PER_PLAN_ENROLLMENT APPE
+     --,ANC_PER_ACCRUAL_ENTRIES AB
+	 ,ANC_PER_ACRL_ENTRY_DTLS ABD
+	 ,ANC_ABSENCE_PLANS_F_TL PLAN
+	 ,PER_ALL_ASSIGNMENTS_M PAAM
+WHERE APPE.PERSON_ID = ABD.PERSON_ID(+)
+AND APPE.PLAN_ID = ABD.PL_ID(+)	
+AND APPE.PER_PLAN_ENRT_ID=ABD.PER_PLAN_ENRT_ID(+)		
+AND ABD.TYPE (+)= 'INIT'
+/
+----------
+OTL Tables
+----------
+SELECT SUM(HTRW1.HOURS)
+         FROM HWM_TM_REP_WORK_HOURS_SUM_V HTRW1
+         WHERE HTRW1.PERSON_ID       =HTRW.PERSON_ID
+         AND HTRW1.PAYROLL_TIME_TYPE LIKE 'Overtime Hours - US'
+         AND HTRW1.PYR_APRV_STATUS='APPROVED'
+         AND HTRW1.GRP_TYPE_ID    =200
+
+------------------		 
+Paytoll Tables
+------------------
+(select runresultvaluepeo.run_result_id,
+				runresultvaluepeo.input_value_id,
+				runresultvaluepeo.result_value,
+				payrollactionpeo.payroll_action_id,
+				payrollactionpeo.effective_date,
+				payrollactionpeo.payroll_id,
+				trim(payrolldpeo.payroll_name) as payroll_name,
+				payrollactionpeo.earn_time_period_id,
+				payrollactionpeo.action_type,
+				payrollrelationshippeo.person_id,
+				payrollrelationshippeo.payroll_relationship_number,
+				payrollrelationshippeo.payroll_stat_unit_id,
+				payrollrelationshipactionpeo.run_type_id,
+				runresultpeo.element_type_id,
+				runresultpeo.payroll_assignment_id,
+				runresultpeo.element_entry_id,
+				runresultpeo.source_id,
+				runresultpeo.source_type,
+				runresultpeo.status,
+				runresultpeo.entry_type,
+				runresultpeo.payroll_rel_action_id,
+				runresultpeo.payroll_term_id,
+				runresultpeo.source_result_id,
+				runresultpeo.start_date,
+				runresultpeo.time_definition_id,
+				runresultpeo.third_party_payee_id,
+				runresultpeo.calc_breakdown_id,
+				runresultpeo.tax_unit_id
+			  from pay_run_result_values runresultvaluepeo,
+				pay_run_results runresultpeo,
+				pay_payroll_rel_actions payrollrelationshipactionpeo,
+				pay_payroll_actions payrollactionpeo,
+				pay_pay_relationships_dn payrollrelationshippeo,
+				pay_all_payrolls_f payrolldpeo
+			  where (runresultvaluepeo.run_result_id                      = runresultpeo.run_result_id
+			  and runresultpeo.payroll_rel_action_id                      = payrollrelationshipactionpeo.payroll_rel_action_id
+			  and payrollrelationshipactionpeo.payroll_action_id          = payrollactionpeo.payroll_action_id
+			  and payrollrelationshipactionpeo.payroll_relationship_id    = payrollrelationshippeo.payroll_relationship_id)
+			  and payrollrelationshipactionpeo.retro_component_id is null
+			  and payrollactionpeo.payroll_id = payrolldpeo.payroll_id
+			  and ( payrollactionpeo.effective_date >= payrolldpeo.effective_start_date 
+			  and payrollactionpeo.effective_date <= payrolldpeo.effective_end_date  )	
+			  
+			  /
+			  
+			  
+			  
+			  SELECT PAPF.PERSON_NUMBER AS EMP_ID 
+      ,'210EMPLPAYINFO ' AS REC_TYPE
+      ,'14682' AS COCODE
+	  ,REPLACE(REPLACE(PNI.NATIONAL_IDENTIFIER_NUMBER,'-',''),' ','') AS SSN
+	  ,'4316 88 661' AS FEIN
+	  ,'N' AS VERPAY
+	  ,LOCATIONS.INTERNAL_LOCATION_CODE AS VERDIV
+	 /* ,(SELECT TO_CHAR(PAYROLLS.EFFECTIVE_START_DATE,'YYYYMMDD')
+          FROM PAY_PAY_RELATIONSHIPS_DN PPRF
+              ,PAY_REL_GROUPS_DN PRGD
+              ,PAY_ASSIGNED_PAYROLLS_DN PAPD
+              ,PAY_ALL_PAYROLLS_F PAYROLLS
+			  ,PAY_PAY_RELATIONSHIPS_F PPRF1
+         WHERE 1=1 AND ROWNUM=1
+           AND PPRF.PERSON_ID =  PAPF.PERSON_ID
+           AND PPRF.PAYROLL_RELATIONSHIP_ID = PRGD.PAYROLL_RELATIONSHIP_ID
+		   AND PPRF.PAYROLL_RELATIONSHIP_ID = PPRF1.PAYROLL_RELATIONSHIP_ID
+           AND PRGD.GROUP_TYPE = 'T'
+           AND PRGD.RELATIONSHIP_GROUP_ID = PAPD.PAYROLL_TERM_ID
+           AND PAPD.PAYROLL_ID = PAYROLLS.PAYROLL_ID
+           AND NVL(:REPDATE,SYSDATE) BETWEEN PPRF.START_DATE AND NVL(PPRF.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND NVL(:REPDATE,SYSDATE) BETWEEN PRGD.START_DATE AND NVL(PRGD.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND NVL(:REPDATE,SYSDATE) BETWEEN PAPD.START_DATE AND NVL(PAPD.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+		   AND NVL(:REPDATE,SYSDATE) BETWEEN PPRF1.EFFECTIVE_START_DATE AND NVL(PPRF1.EFFECTIVE_END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND NVL(:REPDATE,SYSDATE) BETWEEN PAYROLLS.EFFECTIVE_START_DATE AND NVL(PAYROLLS.EFFECTIVE_END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND NVL(:REPDATE,SYSDATE) BETWEEN PAPD.FSED AND NVL(PAPD.LSED,TO_DATE('31-12-4712','DD-MM-YYYY'))) AS PASOFDATE */	
+	  ,(select ptp.regular_earn_date
+	      from pay_time_periods ptp
+		      ,pay_payroll_rel_actions ppra
+              ,pay_payroll_actions ppa
+              ,pay_pay_relationships_dn pprd
+		 where ptp.payroll_id = ppa.payroll_id
+		   and ptp.time_period_id = ppa.earn_time_period_id 
+		   AND PAPF.PERSON_ID = PPRD.PERSON_ID
+		  AND PPRA.PAYROLL_RELATIONSHIP_ID = PPRD.PAYROLL_RELATIONSHIP_ID
+		  AND PPRA.PAYROLL_ACTION_ID = PPA.PAYROLL_ACTION_ID
+		  AND PPRA.retro_component_id is null 
+		  AND pprd.person_id = papf.person_id
+		  and rownum = 1) AS PASOFDATE		   
+      ,PAAM.NORMAL_HOURS AS AVGHOURS
+      ,'N' AS RECEIVING
+      ,NULL AS CARRIER
+      ,NULL AS INJDATE
+      ,NULL AS AWARDDATE
+      ,NULL AS CLAIMPEND
+      ,NULL AS CLAIMNUM
+      ,LOCATIONS.ADDRESS_LINE_1 AS L1
+      ,LOCATIONS.ADDRESS_LINE_2 AS L2
+      ,LOCATIONS.TOWN_OR_CITY AS CITY
+      ,LOCATIONS.REGION_2 AS STATE1
+      ,LOCATIONS.POSTAL_CODE AS ZIP
+      ,LOCATIONS.COUNTRY AS COUNTRY
+      ,(SELECT HAU.ATTRIBUTE1  FROM HR_ALL_ORGANIZATION_UNITS HAU
+	    WHERE HAU.ORGANIZATION_ID = PAAM.LEGAL_ENTITY_ID
+		  AND :REPDATE BETWEEN HAU.EFFECTIVE_START_DATE AND HAU.EFFECTIVE_END_DATE) AS DEPTCD
+      ,'JOB CL' AS COMPCLASSCD
+      ,NVL(PAAM.LABOUR_UNION_MEMBER_FLAG,'U') AS UNIONMEM
+      ,PAAM.BARGAINING_UNIT_CODE AS UNAFFIL
+      ,CS.REVIEW_DATE AS DATENEXTINC
+      ,NULL AS AMTNEXTINC
+      ,(SELECT to_char(cs1.DATE_FROM,'YYYYMMDD')
+                       FROM CMP_SALARY cs1
+	                   WHERE cs1.assignment_id = cs.assignment_id
+		               AND   cs.DATE_FROM - 1 = trunc(cs1.date_to)) AS DATELASTINC
+      ,CS.SALARY_AMOUNT -(SELECT to_char(cs1.salary_amount,'99999999.9999')
+                       FROM CMP_SALARY cs1
+	                   WHERE cs1.assignment_id = cs.assignment_id
+		               AND   cs.DATE_FROM - 1 = trunc(cs1.date_to)) AS AMTLASTINC
+      ,NULL AS CONTEMP
+      /*,(select SUM(val.SCREEN_ENTRY_VALUE)
+             from PAY_ELEMENT_ENTRIES_F ELE
+                  ,PAY_ELEMENT_TYPES_F ELE_TYPE
+                  ,PAY_INPUT_VALUES_F IV
+                  ,PAY_ELEMENT_ENTRY_VALUES_F VAL
+            where 1=1
+           AND ELE.PERSON_ID = PAPF.PERSON_ID
+           and ELE.ELEMENT_TYPE_ID = ELE_TYPE.ELEMENT_TYPE_ID(+)
+           and ele_type.base_element_name in ('Medical UHC PPO EE','Dental EE')
+           AND ELE_TYPE.ELEMENT_TYPE_ID=IV.ELEMENT_TYPE_ID(+)
+           AND IV.BASE_NAME(+) = 'Amount'
+           AND ELE.ELEMENT_ENTRY_ID = VAL.ELEMENT_ENTRY_ID(+)
+           AND IV.INPUT_VALUE_ID = VAL.INPUT_VALUE_ID
+           and :REPDATE between ele.EFFECTIVE_START_DATE and ele.EFFECTIVE_END_DATE
+           AND :REPDATE between val.effective_start_date and val.effective_end_date) AS CONTOT*/
+	  ,NULL AS CONTOT	   
+      ,NULL AS CONTBON
+      ,NULL AS DAYSMISSED
+      ,TO_CHAR(PAAM.EFFECTIVE_START_DATE,'YYYYMMDD') AS LEAVESTART
+      ,TO_CHAR(PAAM.EFFECTIVE_END_DATE,'YYYYMMDD') AS LEAVEEND
+      ,CS.SALARY_AMOUNT AS PAYRATE
+      ,(SELECT PAYROLLS.PERIOD_TYPE
+          FROM PAY_PAY_RELATIONSHIPS_DN PPRF
+              ,PAY_REL_GROUPS_DN PRGD
+              ,PAY_ASSIGNED_PAYROLLS_DN PAPD
+              ,PAY_ALL_PAYROLLS_F PAYROLLS
+			 -- ,PAY_PAY_RELATIONSHIPS_F PPRF1
+         WHERE 1=1 AND ROWNUM=1
+           AND PPRF.PERSON_ID =  PAPF.PERSON_ID
+           AND PPRF.PAYROLL_RELATIONSHIP_ID = PRGD.PAYROLL_RELATIONSHIP_ID
+		--   AND PPRF.PAYROLL_RELATIONSHIP_ID = PPRF1.PAYROLL_RELATIONSHIP_ID
+           AND PRGD.GROUP_TYPE = 'T'
+           AND PRGD.RELATIONSHIP_GROUP_ID = PAPD.PAYROLL_TERM_ID
+           AND PAPD.PAYROLL_ID = PAYROLLS.PAYROLL_ID
+           AND :REPDATE BETWEEN PPRF.START_DATE AND NVL(PPRF.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND :REPDATE BETWEEN PRGD.START_DATE AND NVL(PRGD.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+           AND :REPDATE BETWEEN PAPD.START_DATE AND NVL(PAPD.END_DATE,TO_DATE('31-12-4712','DD-MM-YYYY'))
+		  -- AND :REPDATE BETWEEN PPRF1.EFFECTIVE_START_DATE AND PPRF1.EFFECTIVE_END_DATE
+           AND :REPDATE BETWEEN PAYROLLS.EFFECTIVE_START_DATE AND PAYROLLS.EFFECTIVE_END_DATE
+           AND :REPDATE BETWEEN PAPD.FSED AND NVL(PAPD.LSED,TO_DATE('31-12-4712','DD-MM-YYYY'))) AS PAYRATECD
+      ,(select SUM(val.SCREEN_ENTRY_VALUE)
+             from PAY_ELEMENT_ENTRIES_F ELE
+                  ,PAY_ELEMENT_TYPES_F ELE_TYPE
+                  ,PAY_INPUT_VALUES_F IV
+                  ,PAY_ELEMENT_ENTRY_VALUES_F VAL
+            where 1=1
+           AND ELE.PERSON_ID = PAPF.PERSON_ID
+           and ELE.ELEMENT_TYPE_ID = ELE_TYPE.ELEMENT_TYPE_ID
+           and ele_type.base_element_name in ('Medical UHC PPO EE','Dental EE')
+           AND ELE_TYPE.ELEMENT_TYPE_ID=IV.ELEMENT_TYPE_ID
+           AND IV.BASE_NAME = 'Amount'
+           AND ELE.ELEMENT_ENTRY_ID = VAL.ELEMENT_ENTRY_ID
+           AND IV.INPUT_VALUE_ID = VAL.INPUT_VALUE_ID
+           and :REPDATE between ele.EFFECTIVE_START_DATE and ele.EFFECTIVE_END_DATE
+           AND :REPDATE between val.effective_start_date and val.effective_end_date) AS CVGTOT
+      ,NULL AS CVGFREQ
+      ,((select ppa.effective_date
+         from pay_pay_relationships_dn pprd
+          ,pay_payroll_rel_actions pra
+          ,pay_payroll_actions ppa
+          ,pay_action_classes pac
+          where
+          1 = 1 AND ROWNUM=1
+		  and ppa.payroll_action_id = pra.payroll_action_id
+          and pac.action_type = ppa.action_type
+          and pac.classification_name = 'SEQUENCED'
+          and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                   where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+								   and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)					   
+          and pprd.payroll_relationship_number =PAPF.PERSON_NUMBER
+          and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+          and pra.retro_component_id is null)) AS YTDATE_1
+      ,(select SUM(bal.balance_value)
+          from
+          per_legislative_data_groups_vl ldg
+          ,pay_pay_relationships_dn pprd
+          ,pay_payroll_rel_actions pra
+          ,pay_payroll_actions ppa
+          ,pay_action_classes pac
+          ,pay_balance_types_vl pbt
+          ,table(pay_balance_view_pkg.get_balance_dimensions
+          (p_balance_type_id=>pbt.balance_type_id
+          ,p_payroll_rel_action_id=>pra.payroll_rel_action_id
+          ,p_payroll_term_id=> null
+          ,p_payroll_assignment_id=> null
+          )) bal
+          ,pay_dimension_usages_vl pdu
+          where
+          1 = 1
+          and pprd.legislative_data_group_id = ldg.legislative_data_group_id
+          and pprd.payroll_relationship_number = PAPF.PERSON_NUMBER
+          and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+          and pra.retro_component_id is null
+          and exists
+          (select 1
+          from pay_run_results prr
+          where prr.payroll_rel_action_id = pra.payroll_rel_action_id
+          )
+          and ppa.payroll_action_id = pra.payroll_action_id
+          and pac.action_type = ppa.action_type
+          and pac.classification_name = 'SEQUENCED'
+          and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                    where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+            and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)
+          and nvl(pbt.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pbt.legislative_data_group_id, ldg.legislative_data_group_id)= ldg.legislative_data_group_id
+          and pbt.balance_name = 'Gross Pay'
+          and pdu.balance_dimension_id = bal.balance_dimension_id
+          and nvl(pdu.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pdu.legislative_data_group_id, ldg.legislative_data_group_id) = ldg.legislative_data_group_id
+          and pdu.dimension_name  = 'Relationship Year to Date') AS BASE_1
+	
+	-- Need clarification on this, weather it is run result or balance
+      ,(select SUM(bal.balance_value)
+        from
+        per_legislative_data_groups_vl ldg
+        ,pay_pay_relationships_dn pprd
+        ,pay_payroll_rel_actions pra
+        ,pay_payroll_actions ppa
+        ,pay_action_classes pac
+        ,pay_balance_types_vl pbt
+        ,table(pay_balance_view_pkg.get_balance_dimensions
+        (p_balance_type_id=>pbt.balance_type_id
+        ,p_payroll_rel_action_id=>pra.payroll_rel_action_id
+        ,p_payroll_term_id=> null
+        ,p_payroll_assignment_id=> null
+        )) bal
+        ,pay_dimension_usages_vl pdu
+        where
+        1 = 1
+        and pprd.legislative_data_group_id = ldg.legislative_data_group_id
+        and pprd.payroll_relationship_number = PAPF.PERSON_NUMBER
+        and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+        and pra.retro_component_id is null
+        and exists
+        (select 1
+        from pay_run_results prr
+        where prr.payroll_rel_action_id = pra.payroll_rel_action_id
+        )
+        and ppa.payroll_action_id = pra.payroll_action_id
+        and pac.action_type = ppa.action_type
+        and pac.classification_name = 'SEQUENCED'
+        and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                  where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+        and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)
+        and nvl(pbt.legislation_code, ldg.legislation_code) = ldg.legislation_code
+        and nvl(pbt.legislative_data_group_id, ldg.legislative_data_group_id)= ldg.legislative_data_group_id
+        and pbt.balance_name = 'Overtime'
+        and pdu.balance_dimension_id = bal.balance_dimension_id
+        and nvl(pdu.legislation_code, ldg.legislation_code) = ldg.legislation_code
+        and nvl(pdu.legislative_data_group_id, ldg.legislative_data_group_id) = ldg.legislative_data_group_id
+        and pdu.dimension_name  = 'Relationship Year to Date') AS OT_1
+      /*,(select SUM(val.SCREEN_ENTRY_VALUE)
+             from PAY_ELEMENT_ENTRIES_F ELE
+                  ,PAY_ELEMENT_TYPES_F ELE_TYPE
+                  ,PAY_INPUT_VALUES_F IV
+                  ,PAY_ELEMENT_ENTRY_VALUES_F VAL
+            where 1=1
+           AND ELE.PERSON_ID = PAPF.PERSON_ID
+           and ELE.ELEMENT_TYPE_ID = ELE_TYPE.ELEMENT_TYPE_ID(+)
+           and ele_type.base_element_name in ('Armed Door','Arrival Damage','EMIP Bonus','Incentive Bonus','Lump Sum Bonus'
+		                                      ,'Performance Bonus','Sign On Bonus','SMIP Bonus','Station End Bonus','TSA Reward/Bonus Program'
+											  ,'Arrival Damage','Excess Baggae Fees','Incentive Bonus','In LIeu of Notice','Lump Sum Payout','Severance'
+											  ,'SLA Bonus','Station Ending Bonus')
+           AND ELE_TYPE.ELEMENT_TYPE_ID=IV.ELEMENT_TYPE_ID(+)
+           AND IV.BASE_NAME(+) = 'Amount'
+           AND ELE.ELEMENT_ENTRY_ID = VAL.ELEMENT_ENTRY_ID(+)
+           AND IV.INPUT_VALUE_ID = VAL.INPUT_VALUE_ID
+           and :REPDATE between ele.EFFECTIVE_START_DATE and ele.EFFECTIVE_END_DATE
+           AND :REPDATE between val.effective_start_date and val.effective_end_date) AS BON_1*/
+	-- Need clarification on this, weather it is run result or balance
+	  ,(select SUM(bal.balance_value)
+          from
+          per_legislative_data_groups_vl ldg
+          ,pay_pay_relationships_dn pprd
+          ,pay_payroll_rel_actions pra
+          ,pay_payroll_actions ppa
+          ,pay_action_classes pac
+          ,pay_balance_types_vl pbt
+          ,table(pay_balance_view_pkg.get_balance_dimensions
+          (p_balance_type_id=>pbt.balance_type_id
+          ,p_payroll_rel_action_id=>pra.payroll_rel_action_id
+          ,p_payroll_term_id=> null
+          ,p_payroll_assignment_id=> null
+          )) bal
+          ,pay_dimension_usages_vl pdu
+          where
+          1 = 1
+          and pprd.legislative_data_group_id = ldg.legislative_data_group_id
+          and pprd.payroll_relationship_number = PAPF.PERSON_NUMBER
+          and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+          and pra.retro_component_id is null
+          and exists
+          (select 1
+          from pay_run_results prr
+          where prr.payroll_rel_action_id = pra.payroll_rel_action_id
+          )
+          and ppa.payroll_action_id = pra.payroll_action_id
+          and pac.action_type = ppa.action_type
+          and pac.classification_name = 'SEQUENCED'
+          and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                    where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+            and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)
+          and nvl(pbt.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pbt.legislative_data_group_id, ldg.legislative_data_group_id)= ldg.legislative_data_group_id
+          and pbt.balance_name = 'Bonuses'
+          and pdu.balance_dimension_id = bal.balance_dimension_id
+          and nvl(pdu.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pdu.legislative_data_group_id, ldg.legislative_data_group_id) = ldg.legislative_data_group_id
+          and pdu.dimension_name  = 'Relationship Year to Date') AS BON_1	   
+      /*,(select SUM(val.SCREEN_ENTRY_VALUE)
+             from PAY_ELEMENT_ENTRIES_F ELE
+                  ,PAY_ELEMENT_TYPES_F ELE_TYPE
+                  ,PAY_INPUT_VALUES_F IV
+                  ,PAY_ELEMENT_ENTRY_VALUES_F VAL
+            where 1=1
+           AND ELE.PERSON_ID = PAPF.PERSON_ID
+           and ELE.ELEMENT_TYPE_ID = ELE_TYPE.ELEMENT_TYPE_ID(+)
+           and ele_type.base_element_name in ('SCP Bonus','SCP-Sales Commission')
+           AND ELE_TYPE.ELEMENT_TYPE_ID=IV.ELEMENT_TYPE_ID(+)
+           AND IV.BASE_NAME(+) = 'Amount'
+           AND ELE.ELEMENT_ENTRY_ID = VAL.ELEMENT_ENTRY_ID(+)
+           AND IV.INPUT_VALUE_ID = VAL.INPUT_VALUE_ID
+           and :REPDATE between ele.EFFECTIVE_START_DATE and ele.EFFECTIVE_END_DATE
+           AND :REPDATE between val.effective_start_date and val.effective_end_date) AS COM_1*/
+		   
+   -- Need clarification on this, weather it is run result or balance		   
+	  ,(select SUM(bal.balance_value)
+          from
+          per_legislative_data_groups_vl ldg
+          ,pay_pay_relationships_dn pprd
+          ,pay_payroll_rel_actions pra
+          ,pay_payroll_actions ppa
+          ,pay_action_classes pac
+          ,pay_balance_types_vl pbt
+          ,table(pay_balance_view_pkg.get_balance_dimensions
+          (p_balance_type_id=>pbt.balance_type_id
+          ,p_payroll_rel_action_id=>pra.payroll_rel_action_id
+          ,p_payroll_term_id=> null
+          ,p_payroll_assignment_id=> null
+          )) bal
+          ,pay_dimension_usages_vl pdu
+          where
+          1 = 1
+          and pprd.legislative_data_group_id = ldg.legislative_data_group_id
+          and pprd.payroll_relationship_number = PAPF.PERSON_NUMBER
+          and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+          and pra.retro_component_id is null
+          and exists
+          (select 1
+          from pay_run_results prr
+          where prr.payroll_rel_action_id = pra.payroll_rel_action_id
+          )
+          and ppa.payroll_action_id = pra.payroll_action_id
+          and pac.action_type = ppa.action_type
+          and pac.classification_name = 'SEQUENCED'
+          and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                    where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+            and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)
+          and nvl(pbt.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pbt.legislative_data_group_id, ldg.legislative_data_group_id)= ldg.legislative_data_group_id
+          and pbt.balance_name = 'Commissions'
+          and pdu.balance_dimension_id = bal.balance_dimension_id
+          and nvl(pdu.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pdu.legislative_data_group_id, ldg.legislative_data_group_id) = ldg.legislative_data_group_id
+          and pdu.dimension_name  = 'Relationship Year to Date') AS COM_1	   
+      /*,(select SUM(val.SCREEN_ENTRY_VALUE)
+             from PAY_ELEMENT_ENTRIES_F ELE
+                  ,PAY_ELEMENT_TYPES_F ELE_TYPE
+                  ,PAY_INPUT_VALUES_F IV
+                  ,PAY_ELEMENT_ENTRY_VALUES_F VAL
+            where 1=1
+           AND ELE.PERSON_ID = PAPF.PERSON_ID
+           and ELE.ELEMENT_TYPE_ID = ELE_TYPE.ELEMENT_TYPE_ID(+)
+           and ele_type.base_element_name in ('Security Deposit Refund','Appreciation Award','BCMSP Taxable Benefit','Boot Allowance Non Taxable'
+		                                      ,'Boot Allowance Taxable','Cell Phone','CSST','DeIcing Premium Reg','Employee Referral','Garnishment Refund'
+											  ,'Hosiry Reimbursement','Health Spending Account','HSA Taxable','International Documents'
+											  ,'KLM Premium Reg','Language Premium Reg','Light Duty Reg','Mechanic Reg Canada','New Hire Training'
+											  ,'On Call','Ops Premium Reg','Per Diem-Canada','Pilfering','Premiums Due','Parking Taxable Benefit'
+											  ,'Retiring Allowance Eligible','Retiring Allowance-NE','Relocation Taxable','Safety Incentive'
+											  ,'STD CN','Startup Labor Reg','Supervisor Pay Reg','TDY Regular','Tips Canada','Tool Allowance'
+                                              ,'Training Pay Reg','Transportation')
+           AND ELE_TYPE.ELEMENT_TYPE_ID=IV.ELEMENT_TYPE_ID(+)
+           AND IV.BASE_NAME(+) = 'Amount'
+           AND ELE.ELEMENT_ENTRY_ID = VAL.ELEMENT_ENTRY_ID(+)
+           AND IV.INPUT_VALUE_ID = VAL.INPUT_VALUE_ID
+           and :REPDATE between ele.EFFECTIVE_START_DATE and ele.EFFECTIVE_END_DATE
+           AND :REPDATE between val.effective_start_date and val.effective_end_date) AS OTHER_1*/
+
+-- Need clarification on this, weather it is run result or balance		   
+	  ,(select SUM(bal.balance_value)
+          from
+          per_legislative_data_groups_vl ldg
+          ,pay_pay_relationships_dn pprd
+          ,pay_payroll_rel_actions pra
+          ,pay_payroll_actions ppa
+          ,pay_action_classes pac
+          ,pay_balance_types_vl pbt
+          ,table(pay_balance_view_pkg.get_balance_dimensions
+          (p_balance_type_id=>pbt.balance_type_id
+          ,p_payroll_rel_action_id=>pra.payroll_rel_action_id
+          ,p_payroll_term_id=> null
+          ,p_payroll_assignment_id=> null
+          )) bal
+          ,pay_dimension_usages_vl pdu
+          where
+          1 = 1
+          and pprd.legislative_data_group_id = ldg.legislative_data_group_id
+          and pprd.payroll_relationship_number = PAPF.PERSON_NUMBER
+          and pra.payroll_relationship_id =  pprd.payroll_relationship_id
+          and pra.retro_component_id is null
+          and exists
+          (select 1
+          from pay_run_results prr
+          where prr.payroll_rel_action_id = pra.payroll_rel_action_id
+          )
+          and ppa.payroll_action_id = pra.payroll_action_id
+          and pac.action_type = ppa.action_type
+          and pac.classification_name = 'SEQUENCED'
+          and ppa.effective_date = (select max(ppa1.effective_date) from pay_payroll_actions ppa1,pay_payroll_rel_actions pra1,pay_pay_relationships_dn pprd1
+                                    where ppa1.payroll_action_id = pra1.payroll_action_id and pra1.payroll_relationship_id = pprd1.payroll_relationship_id
+            and pra1.retro_component_id is null and pprd1.payroll_relationship_number = pprd.payroll_relationship_number)
+          and nvl(pbt.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pbt.legislative_data_group_id, ldg.legislative_data_group_id)= ldg.legislative_data_group_id
+          and pbt.balance_name = 'Other'
+          and pdu.balance_dimension_id = bal.balance_dimension_id
+          and nvl(pdu.legislation_code, ldg.legislation_code) = ldg.legislation_code
+          and nvl(pdu.legislative_data_group_id, ldg.legislative_data_group_id) = ldg.legislative_data_group_id
+          and pdu.dimension_name  = 'Relationship Year to Date') AS OTHER_1	   
+      ,NULL AS TOTAL_1
+      ,NULL AS YTDATE_2
+      ,'00000000.00' AS BASE_2
+      ,'00000000.00' AS OT_2
+      ,'00000000.00' AS BON_2
+      ,'00000000.00' AS COM_2
+      ,'00000000.00' AS OTHER_2
+      ,NULL AS TOTAL_2
+      ,NULL AS YTDATE_3
+      ,'00000000.00' AS BASE_3
+      ,'00000000.00' AS OT_3
+      ,'00000000.00' AS BON_3
+      ,'00000000.00' AS COM_3
+      ,'00000000.00' AS OTHER_3
+      ,NULL AS TOTAL_3
+      ,NULL AS INHOUSENUM
+	  
+ FROM PER_ALL_PEOPLE_F PAPF
+     ,PER_NATIONAL_IDENTIFIERS PNI
+	 ,PER_ALL_ASSIGNMENTS_M PAAM
+	 ,HR_LOCATIONS_ALL LOCATIONS
+	 ,PER_PERIODS_OF_SERVICE PPOS
+	 ,CMP_SALARY CS
+	 -- ,PAY_PAYROLL_REL_ACTIONS PPRA
+     -- ,PAY_PAYROLL_ACTIONS PPA
+     -- ,PAY_PAY_RELATIONSHIPS_DN PPRD
+WHERE 1=1
+  AND PAPF.PERSON_ID = PNI.PERSON_ID(+)
+  AND PAPF.PERSON_ID = PAAM.PERSON_ID
+  AND PAAM.ASSIGNMENT_TYPE IN ('E')
+  AND PAAM.PRIMARY_FLAG='Y'
+  AND PAAM.LOCATION_ID(+) = LOCATIONS.LOCATION_ID
+  AND PAAM.PERIOD_OF_SERVICE_ID = PPOS.PERIOD_OF_SERVICE_ID
+  AND PAAM.ASSIGNMENT_ID = CS.ASSIGNMENT_ID(+)
+  AND  EXISTS( SELECT 1 FROM HR_LEGAL_ENTITIES HLE
+                WHERE PAAM.LEGAL_ENTITY_ID=HLE.ORGANIZATION_ID
+                  AND HLE.NAME='Airport Terminal Services, Inc'
+                  AND HLE.CLASSIFICATION_CODE='HCM_LEMP'				  
+                  AND :REPDATE BETWEEN HLE.EFFECTIVE_START_DATE AND HLE.EFFECTIVE_END_DATE)
+  ----
+  -- AND PAPF.PERSON_ID = PPRD.PERSON_ID
+  -- AND PPRA.PAYROLL_RELATIONSHIP_ID = PPRD.PAYROLL_RELATIONSHIP_ID
+  -- AND PPRA.PAYROLL_ACTION_ID = PPA.PAYROLL_ACTION_ID
+  -- AND PPRA.retro_component_id is null
+  ----
+  AND (PPOS.ACTUAL_TERMINATION_DATE IS NULL OR PPOS.ACTUAL_TERMINATION_DATE >= TRUNC(NVL(:REPDATE,SYSDATE),'YEAR') )
+  AND :REPDATE BETWEEN PAPF.EFFECTIVE_START_DATE AND PAPF.EFFECTIVE_END_DATE
+  AND :REPDATE BETWEEN PAAM.EFFECTIVE_START_DATE AND PAAM.EFFECTIVE_END_DATE
+  AND :REPDATE BETWEEN LOCATIONS.EFFECTIVE_START_DATE(+) AND LOCATIONS.EFFECTIVE_END_DATE(+)
+ -- AND :REPDATE BETWEEN HAU.EFFECTIVE_START_DATE AND HAU.EFFECTIVE_END_DATE
+  --AND :REPDATE BETWEEN HLE.EFFECTIVE_START_DATE AND HLE.EFFECTIVE_END_DATE
+  AND :REPDATE BETWEEN CS.DATE_FROM(+) AND NVL(CS.DATE_TO(+),TO_DATE('31-12-4712','DD-MM-YYYY'))
+  
+  /
+  
+  
