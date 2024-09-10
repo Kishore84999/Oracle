@@ -1,0 +1,1249 @@
+/* Formatted on 03-07-2020 17:42:27 (QP5 v5.149.1003.31008) */
+SELECT DISTINCT TABLE1.gl_date                GL_DATE,
+                TABLE1.creation_date          CREATION_DATE,
+                TABLE1.created_by             CREATED_BY,
+                TABLE1.last_update_date       LAST_UPDATE_DATE,
+                TABLE1.gl_transfer_date       GL_TRANSFER_DATE,
+                TABLE1.reference_date         REFERENCE_DATE,
+                TABLE1.completed_date         COMPLETED_DATE,
+                TABLE1.transaction_number     TRANSACTION_NUMBER,
+                TABLE1.transaction_date       TRANSACTION_DATE,
+                TABLE1.document_category      DOCUMENT_CATEGORY,
+                TABLE1.document_sequence_name DOCUMENT_SEQUENCE_NAME,
+                TABLE1.application_id         APPLICATION_ID,
+                TABLE1.application_name       APPLICATION_NAME,
+                TABLE1.header_id              HEADER_ID,
+                TABLE1.header_description     HEADER_DESCRIPTION,
+                TABLE1.je_category_name       JE_CATEGORY_NAME,
+                TABLE1.je_source_name         JE_SOURCE_NAME,
+                TABLE1.event_id               EVENT_ID,
+                TABLE1.event_date             EVENT_DATE,
+                TABLE1.event_number           EVENT_NUMBER,
+                TABLE1.event_class_code       EVENT_CLASS_CODE,
+                TABLE1.event_class_name       EVENT_CLASS_NAME,
+                TABLE1.event_type_code        EVENT_TYPE_CODE,
+                TABLE1.event_type_name        EVENT_TYPE_NAME,
+                TABLE1.gl_batch_name          GL_BATCH_NAME,
+                TABLE1.posted_date            POSTED_DATE,
+                TABLE1.gl_je_name             GL_JE_NAME,
+                TABLE1.gl_line_number         GL_LINE_NUMBER,
+                TABLE1.line_number            LINE_NUMBER,
+                TABLE1.orig_line_number       ORIG_LINE_NUMBER,
+                TABLE1.accounting_class_code  ACCOUNTING_CLASS_CODE,
+                TABLE1.accounting_class_name  ACCOUNTING_CLASS_NAME,
+                TABLE1.line_description       LINE_DESCRIPTION,
+                TABLE1.entered_currency       ENTERED_CURRENCY,
+                TABLE1.entered_dr             ENTERED_DR,
+                TABLE1.entered_cr             ENTERED_CR,
+                TABLE1.unrounded_accounted_dr UNROUNDED_ACCOUNTED_DR,
+                TABLE1.unrounded_accounted_cr UNROUNDED_ACCOUNTED_CR,
+                TABLE1.accounted_dr           ACCOUNTED_DR,
+                TABLE1.accounted_cr           ACCOUNTED_CR,
+                TABLE1.party_type_code        PARTY_TYPE_CODE,
+                TABLE1.party_type             PARTY_TYPE,
+                TABLE1.ledger_id              LEDGER_ID,
+                TABLE1.period_name            PERIOD_NAME,
+                TABLE1.balance_type_code      BALANCE_TYPE_CODE,
+                ( CASE TABLE1.balance_type_code
+                    WHEN 'A' THEN 'Actual'
+                    WHEN 'E' THEN 'Encumbrance'
+                    ELSE NULL
+                  END )                       BALANCE_TYPE
+                --,DECODE(TABLE1.BALANCE_TYPE_CODE,'E',:P_ENCUMBRANCE_TYPE,NULL)  ENCUMBRANCE_TYPE
+                ,
+                TABLE1.code_combination_id    CODE_COMBINATION_ID,
+                TABLE1.segment1               SEGMENT1,
+                TABLE1.segment2               SEGMENT2,
+                TABLE1.segment3               SEGMENT3,
+                TABLE1.segment4               SEGMENT4,
+                TABLE1.segment5               SEGMENT5,
+                TABLE1.segment6               SEGMENT6,
+                TABLE1.segment7               SEGMENT7,
+                TABLE1.voucher_number,
+                TABLE1.customer_name,
+                TABLE1.trans_amount,
+                TABLE1.trans_description,
+                TABLE1.effective_period_num,
+                TABLE1.adjustment_period_flag,
+				TABLE1.ASSOCIATED_DOC_NUM,TABLE1.SOURCE_ID_INT_1
+FROM   (SELECT
+/*+ index (ent XLA_TRANSACTION_ENTITIES_U1 ) index ( gjb GL_JE_BATCHES_U1 ) */
+                To_char (aeh.accounting_date, 'YYYY-MM-DD')             GL_DATE,
+        fdu.username                                            CREATED_BY,
+        To_char (aeh.creation_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                                CREATION_DATE,
+        To_char (aeh.last_update_date, 'YYYY-MM-DD')            LAST_UPDATE_DATE
+                ,
+        To_char (aeh.gl_transfer_date, 'YYYY-MM-DD')
+                                                                --'YYYY-MM-DD"T"hh:mi:ss')
+                                                                GL_TRANSFER_DATE
+                ,
+        To_char (aeh.reference_date, 'YYYY-MM-DD')
+                REFERENCE_DATE,
+        To_char (aeh.completed_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                                COMPLETED_DATE,
+        ent.transaction_number
+                TRANSACTION_NUMBER,
+        To_char (xle.transaction_date, 'YYYY-MM-DD') --'YYYY-MM-DD"T"hh:mi:ss')
+                                                                TRANSACTION_DATE
+                ,
+        NULL
+                DOCUMENT_CATEGORY,
+        fns.name
+                DOCUMENT_SEQUENCE_NAME,
+        NULL                                                    APPLICATION_ID,
+        --aeh.application_id APPLICATION_ID,
+        fap.application_name                                    APPLICATION_NAME
+                ,
+        NULL
+                HEADER_ID,
+        --  aeh.ae_header_id HEADER_ID,
+        aeh.description
+                HEADER_DESCRIPTION,
+        gjct.user_je_category_name                              JE_CATEGORY_NAME
+                ,
+        gjst.user_je_source_name
+                JE_SOURCE_NAME,
+        NULL                                                    EVENT_ID,
+        -- xle.event_id EVENT_ID,
+        To_char (xle.event_date, 'YYYY-MM-DD')                  EVENT_DATE,
+        xle.event_number                                        EVENT_NUMBER,
+        NULL                                                    EVENT_CLASS_CODE
+                ,
+        -- xet.event_class_code EVENT_CLASS_CODE,
+        NULL                                                    EVENT_CLASS_NAME
+                ,
+        --  xect.NAME EVENT_CLASS_NAME,
+        NULL                                                    EVENT_TYPE_CODE,
+        --  aeh.event_type_code EVENT_TYPE_CODE,
+        NULL                                                    EVENT_TYPE_NAME,
+        --  xet.NAME EVENT_TYPE_NAME,
+        NULL                                                    GL_BATCH_NAME,
+        -- gjb.NAME GL_BATCH_NAME,
+        To_char (gjb.posted_date, 'YYYY-MM-DD')                 POSTED_DATE,
+        gjh.name                                                GL_JE_NAME,
+        gjh.external_reference
+                EXTERNAL_REFERENCE,
+        NULL                                                    GL_LINE_NUMBER,
+        --  gjl.je_line_num GL_LINE_NUMBER,
+        NULL                                                    LINE_NUMBER,
+        --  ael.displayed_line_number LINE_NUMBER,
+        NULL                                                    ORIG_LINE_NUMBER
+                ,
+        -- ael.ae_line_num ORIG_LINE_NUMBER,
+        NULL
+                ACCOUNTING_CLASS_CODE,
+        --ael.accounting_class_code ACCOUNTING_CLASS_CODE,
+        NULL
+                ACCOUNTING_CLASS_NAME,
+        --xlk2.meaning ACCOUNTING_CLASS_NAME,
+        ael.description                                         LINE_DESCRIPTION
+                ,
+        ael.currency_code
+                ENTERED_CURRENCY,
+        ael.entered_dr                                          ENTERED_DR,
+        ael.entered_cr                                          ENTERED_CR,
+        ael.unrounded_accounted_dr
+                UNROUNDED_ACCOUNTED_DR,
+        ael.unrounded_accounted_cr
+                UNROUNDED_ACCOUNTED_CR,
+        ael.accounted_dr                                        ACCOUNTED_DR,
+        ael.accounted_cr                                        ACCOUNTED_CR,
+        ael.party_type_code                                     PARTY_TYPE_CODE,
+        NULL                                                    PARTY_TYPE,
+        gjh.ledger_id                                           LEDGER_ID,
+        gjh.period_name                                         PERIOD_NAME,
+        gjh.actual_flag
+                BALANCE_TYPE_CODE,
+        cc.code_combination_id
+                CODE_COMBINATION_ID,
+        cc.segment1                                             SEGMENT1,
+        cc.segment2                                             SEGMENT2,
+        cc.segment3                                             SEGMENT3,
+        cc.segment4                                             SEGMENT4,
+        cc.segment5                                             SEGMENT5,
+        cc.segment6                                             SEGMENT6,
+        cc.segment7                                             SEGMENT7,
+        aeh.doc_sequence_value                                  Voucher_Number,
+        CASE
+          WHEN aeh.je_category_name IN ( 'Sales Invoices', 'Credit Memos',
+                                         'Debit Memos'
+                                         ,
+                                         'Adjustment' ) THEN
+          (SELECT hp.party_name
+           FROM
+          hz_cust_accounts hz_account,
+          hz_parties hp
+                                                              WHERE
+          hz_account.cust_account_id = ael.party_id
+          AND hp.party_id = hz_account.party_id)
+          WHEN aeh.je_category_name IN ( 'Receipts' ) THEN (SELECT hp.party_name
+                                                            FROM
+          ar_cash_receipts_all cr,
+          hz_cust_accounts hz_account,
+          hz_parties hp
+                                                            WHERE
+          ent.source_id_int_1 = cr.cash_receipt_id
+          AND cr.pay_from_customer = hz_account.cust_account_id
+          AND hp.party_id = hz_account.party_id)
+          WHEN aeh.je_category_name IN( 'Purchase Invoices' ) THEN
+          (SELECT hp.party_name
+           FROM
+        ap_invoices_all aia,
+        hz_parties hp
+                                                                    WHERE
+          ent.source_id_int_1 = aia.invoice_id
+          AND hp.party_id = aia.party_id)
+          WHEN GJH.je_source IN ( 'Spreadsheet', 'Manual', 'Allocations',
+                                  'AutoCopy' )
+        THEN gjh.created_by
+									  when aeh.je_category_name  = 'Purchase Order' then
+								  (select distinct VENDOR_NAME from 
+POZ_SUPPLIERS_V ps,
+po_headers_all ph
+where ph.vendor_id =  ps.vendor_id 
+and ph.segment1 = ent.transaction_number)
+when aeh.je_category_name  = 'Requisition' then
+(SELECT distinct LISTAGG (vendor_name, '/')
+WITHIN GROUP (ORDER BY segment1)
+                              segment1_1
+							  from
+(SELECT DISTINCT ps.vendor_name vendor_name
+          FROM   poz_suppliers_v ps,
+       por_requisition_lines_all PRLA,
+	   POR_REQ_DISTRIBUTIONS_ALL PRD,
+       por_requisition_headers_all PRHA
+       WHERE  1 = 1
+       AND PRLA.vendor_id = ps.vendor_id
+       AND PRLA.requisition_header_id = PRHA.requisition_header_id
+	  and PRHA.requisition_header_id = ent.source_id_int_1
+	  AND PRD.REQUISITION_LINE_ID = PRLA.REQUISITION_LINE_ID
+	  and PRD.CODE_COMBINATION_ID = gjl.code_combination_id
+	  and prd.DISTRIBUTION_AMOUNT = abs( Nvl(ael.accounted_dr, 0) - Nvl(ael.accounted_cr, 0) )) )
+        END                                                     Customer_Name,
+        /* CASE 
+                                 WHEN aeh.je_category_name IN ( 
+                                      'Sales Invoices', 'Credit Memos', 
+                                      'Debit Memos' ) 
+                               THEN (SELECT ct.br_amount 
+                               FROM   ra_customer_trx_all ct 
+                               WHERE  ent.source_id_int_1 = ct.customer_trx_id 
+                                      AND ent.ledger_id = ct.set_of_books_id) 
+                                 WHEN aeh.je_category_name IN ( 'Receipts' ) THEN 
+                                 (SELECT cr.amount 
+                                  FROM 
+                                 ar_cash_receipts_all cr 
+                                                                                 WHERE 
+                                 ent.source_id_int_1 = cr.cash_receipt_id) 
+                                 WHEN aeh.je_category_name IN ( 'Adjustment' ) THEN ( 
+                                 SELECT amount FROM 
+                                 ar_adjustments_all 
+                                WHERE ent.source_id_int_1 = adjustment_id)
+                               WHEN aeh.je_category_name IN('Purchase Invoices') THEN
+                                 (SELECT aia.invoice_amount
+                     FROM ap_invoices_all aia
+                     WHERE ent.source_id_int_1 = aia.invoice_id)             
+                               END Trans_Amount, */
+        ( Nvl(ael.accounted_dr, 0) - Nvl(ael.accounted_cr, 0) ) Trans_Amount,
+        /* CASE --Commented by Ashutosh on 05-March topick desc from XLA
+                              /* WHEN aeh.je_category_name IN ( 
+                                     'Sales Invoices', 'Credit Memos', 
+                                     'Debit Memos' ) 
+                              THEN (SELECT rctla.description 
+                              FROM   ra_customer_trx_all ct , ra_customer_trx_lines_all  rctla
+                              WHERE  ent.source_id_int_1 = ct.customer_trx_id
+                                 AND ct.customer_trx_id = rctla.customer_trx_id
+                                -- AND rctla.line_number = 1  
+                               -- AND ael.AE_LINE_NUM = rctla.line_number   
+        and rctla.CUSTOMER_TRX_LINE_ID  =     trx_dist.CUSTOMER_TRX_LINE_ID               
+                                     AND ent.ledger_id = ct.set_of_books_id
+                      AND rctla.line_type = 'LINE') */
+        /*    WHEN aeh.je_category_name IN ( 
+                'Sales Invoices', 'Credit Memos', 
+                'Debit Memos' ) 
+         THEN (SELECT rctla.description 
+         FROM   ra_customer_trx_all ct , ra_customer_trx_lines_all  rctla
+         WHERE  1=1 
+        and ent.source_id_int_1 = ct.customer_trx_id
+            AND ct.customer_trx_id = rctla.customer_trx_id
+           -- AND rctla.line_number = 1  
+           --AND ael.AE_LINE_NUM = rctla.line_number   
+                and rctla.CUSTOMER_TRX_LINE_ID= trx_dist.CUSTOMER_TRX_LINE_ID               
+                AND ent.ledger_id = ct.set_of_books_id
+        and trx_dist.CUSTOMER_TRX_LINE_ID  is not null
+        AND rctla.line_type = 'LINE') */
+        /* WHEN aeh.je_category_name IN('Purchase Invoices') THEN --Commented by Ashutosh on 05-March topick desc from XLA
+           (SELECT aila.description
+        FROM ap_invoices_all aia, ap_invoice_lines_all aila
+        WHERE ent.source_id_int_1 = aia.invoice_id
+        AND aia.invoice_id = aila.invoice_id
+        --AND aila.line_number = 1
+        AND ael.AE_LINE_NUM = aila.line_number 
+        AND aila.line_type_lookup_code = 'ITEM')             
+         END*/
+
+case when aeh.je_category_name = 'Misc Receipts' then 
+			   (select artl.name 
+				from ar_receivables_trx_all artl , ar_cash_receipts_all acr
+					where artl.RECEIVABLES_TRX_ID =  acr. RECEIVABLES_TRX_ID
+ 							--and acr.RECEIPT_NUMBER = ent.transaction_number
+							and ent.SOURCE_ID_INT_1 = acr.CASH_RECEIPT_ID
+							) else
+        ael.description end
+                Trans_Description,
+        ps.effective_period_num,
+        ps.adjustment_period_flag,
+		/*case when aeh.je_category_name = 'Purchase Invoices' then 
+		(SELECT Distinct
+po_hdr.segment1
+FROM ap_invoices_all ap_inv,
+ap_invoice_distributions_all ap_dis,
+po_distributions_all po_dis,
+po_headers_all po_hdr
+WHERE ap_inv.invoice_id = ap_dis.invoice_id
+AND ap_dis.po_distribution_id = po_dis.po_distribution_id
+AND po_dis.po_header_id = po_hdr.po_header_id
+and ap_inv.invoice_num =ent.transaction_number) end*/
+case when aeh.je_category_name = 'Purchase Invoices' then
+(SELECT distinct LISTAGG (segment1, '/')
+WITHIN GROUP (ORDER BY segment1)
+                              segment1_1
+							  from (select distinct po_hdr.segment1 segment1
+          FROM
+         ap_invoice_lines_all ap_inv,
+		 ap_invoice_distributions_all ap_dis,
+         po_headers_all po_hdr
+          WHERE
+			 ap_inv.po_header_id = po_hdr.po_header_id
+		 and ap_inv.invoice_id = ent.source_id_int_1
+		  and ap_inv.invoice_id = ap_dis.invoice_id
+		 and ap_dis.DIST_CODE_COMBINATION_ID = gjl.code_combination_id
+		 and ap_dis.AMOUNT = abs( Nvl(ael.accounted_dr, 0) - Nvl(ael.accounted_cr, 0) ) 
+		 )
+		 ) end
+		 ASSOCIATED_DOC_NUM,ent.SOURCE_ID_INT_1
+        FROM   xla_ae_headers aeh,
+               xla_ae_lines ael,
+               xla_lookups xlk1,
+               xla_lookups xlk2,
+               xla_events xle,
+               xla_event_classes_tl xect,
+               xla_event_types_tl xet,
+               per_users fdu,
+               xla_transaction_entities ent,
+               fnd_application_tl fap,
+               fun_seq_versions fsv1,
+               fun_seq_versions fsv2,
+               fnd_document_sequences fns,
+               gl_je_categories_tl gjct,
+               gl_je_sources_tl gjst,
+               gl_daily_conversion_types gdct,
+               gl_import_references gir,
+               gl_je_lines gjl,
+               gl_je_headers gjh,
+               gl_je_batches gjb,
+               gl_code_combinations cc,
+               gl_ledgers gl,
+               gl_period_statuses ps
+        --, RA_CUST_TRX_LINE_GL_DIST_ALL trx_dist --Added by Ashutosh on 18-FEB
+        WHERE  1 = 1
+               AND gjl.code_combination_id = cc.code_combination_id
+               AND gjl.je_header_id = gjh.je_header_id
+               AND gl.ledger_id = gjl.ledger_id
+               AND gjl.period_name = gjh.period_name
+               AND gjl.je_header_id = gir.je_header_id
+               AND gjl.je_line_num = gir.je_line_num
+               AND gjh.je_header_id = gir.je_header_id
+               AND gjh.status = 'P'
+               AND Nvl (gjh.je_from_sla_flag, 'N') IN ( 'Y', 'U' )
+               AND gjb.je_batch_id = gir.je_batch_id
+               AND gjb.status = 'P'
+               AND gir.gl_sl_link_id = ael.gl_sl_link_id
+               AND gir.gl_sl_link_table = ael.gl_sl_link_table
+               AND gjct.je_category_name = aeh.je_category_name
+               AND gjct.LANGUAGE = Userenv ('LANG')
+               AND gjst.je_source_name = gjh.je_source
+               AND gjst.LANGUAGE = Userenv ('LANG')
+               AND aeh.accounting_entry_status_code = 'F'
+               AND aeh.gl_transfer_status_code = 'Y'
+               AND ael.application_id = aeh.application_id
+               AND ael.ae_header_id = aeh.ae_header_id
+               AND xlk1.lookup_type(+) = 'XLA_FUNDS_STATUS'
+               AND xlk1.lookup_code(+) = aeh.funds_status_code
+               AND xlk2.lookup_type = 'XLA_ACCOUNTING_CLASS'
+               AND xlk2.lookup_code = ael.accounting_class_code
+               AND xle.application_id = aeh.application_id
+               AND xle.event_id = aeh.event_id
+               AND xet.application_id = aeh.application_id
+               AND xet.event_type_code = aeh.event_type_code
+               AND xet.LANGUAGE = Userenv ('LANG')
+               AND xect.application_id = xet.application_id
+               AND xect.entity_code = xet.entity_code
+               AND xect.event_class_code = xet.event_class_code
+               AND xect.LANGUAGE = Userenv ('LANG')
+               AND ent.application_id = aeh.application_id
+               AND ent.entity_id = aeh.entity_id
+               AND fdu.username = ent.created_by
+               AND fap.application_id = aeh.application_id
+               AND fap.LANGUAGE = Userenv ('LANG')
+               AND gjl.period_name = ps.period_name
+               AND cc.chart_of_accounts_id =
+                   Nvl(:P_STRUCT_NUM, cc.chart_of_accounts_id
+                   )
+               AND &flex_secure = 'N'
+               AND fsv1.seq_version_id(+) = aeh.completion_acct_seq_version_id
+               AND fsv2.seq_version_id(+) = aeh.close_acct_seq_version_id
+               AND fns.application_id(+) = aeh.application_id
+               AND fns.doc_sequence_id(+) = aeh.doc_sequence_id
+               AND gdct.conversion_type(+) = ael.currency_conversion_type
+               AND aeh.je_category_name NOT IN ( --Added by Ashutosh on 18th FEB
+                                               'Sales Invoices', 'Credit Memos',
+                                               'Debit Memos',
+                                               'Adjustment' )
+               --and ent.source_id_int_1 = trx_dist.customer_trx_id(+) --Added by Ashutosh on 18th FEB
+               --  AND cc.code_combination_id = trx_dist.code_combination_id(+) --Added by Ashutosh on 18th FEB
+               --  and trx_dist.CUSTOMER_TRX_LINE_Id(+) is not null --Added by Ashutosh on 18th FEB
+               AND gl.name = Nvl (:p_ledger_name, gl.name)
+               AND gjl.effective_date BETWEEN :P_GL_DATE_FROM AND :P_GL_DATE_TO
+               AND gjh.posted_date BETWEEN :P_POSTED_DATE_FROM AND
+                                           :P_POSTED_DATE_TO
+               AND cc.segment1 = Nvl (:p_segment1, cc.segment1)
+               -- AND cc.segment2 = NVL (:p_segment2, cc.segment2)
+               AND cc.segment2 BETWEEN Nvl (:p_segment2, cc.segment2) AND
+                                       Nvl (:p_segm2, cc.segment2)
+               AND cc.segment3 = Nvl (:p_segment3, cc.segment3)
+               AND cc.segment4 = Nvl (:p_segment4, cc.segment4)
+               AND cc.segment5 = Nvl (:p_segment5, cc.segment5)
+               AND Nvl (cc.segment6, 1) = Nvl (:p_segment6, Nvl (cc.segment6, 1)
+                                          )
+               AND Nvl (cc.segment7, 1) = Nvl (:p_segment7, Nvl (cc.segment7, 1)
+                                          )
+               AND gjst.je_source_name = Nvl (:p_je_source_name,
+                                         gjst.je_source_name)
+        UNION ALL
+        --FOR AR
+        SELECT DISTINCT
+/*+ index (ent XLA_TRANSACTION_ENTITIES_U1 ) index ( gjb GL_JE_BATCHES_U1 ) */
+        To_char (aeh.accounting_date, 'YYYY-MM-DD')  GL_DATE,
+        fdu.username                                 CREATED_BY,
+        To_char (aeh.creation_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     CREATION_DATE,
+        To_char (aeh.last_update_date, 'YYYY-MM-DD') LAST_UPDATE_DATE,
+        To_char (aeh.gl_transfer_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     GL_TRANSFER_DATE,
+        To_char (aeh.reference_date, 'YYYY-MM-DD')   REFERENCE_DATE,
+        To_char (aeh.completed_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     COMPLETED_DATE,
+        ent.transaction_number                       TRANSACTION_NUMBER,
+        To_char (xle.transaction_date, 'YYYY-MM-DD') --'YYYY-MM-DD"T"hh:mi:ss')
+                                                     TRANSACTION_DATE,
+        NULL                                         DOCUMENT_CATEGORY,
+        fns.name                                     DOCUMENT_SEQUENCE_NAME,
+        NULL                                         APPLICATION_ID,
+        --aeh.application_id APPLICATION_ID,
+        fap.application_name                         APPLICATION_NAME,
+        NULL                                         HEADER_ID,
+        --  aeh.ae_header_id HEADER_ID,
+        aeh.description                              HEADER_DESCRIPTION,
+        gjct.user_je_category_name                   JE_CATEGORY_NAME,
+        gjst.user_je_source_name                     JE_SOURCE_NAME,
+        NULL                                         EVENT_ID,
+        -- xle.event_id EVENT_ID,
+        To_char (xle.event_date, 'YYYY-MM-DD')       EVENT_DATE,
+        xle.event_number                             EVENT_NUMBER,
+        NULL                                         EVENT_CLASS_CODE,
+        -- xet.event_class_code EVENT_CLASS_CODE,
+        NULL                                         EVENT_CLASS_NAME,
+        --  xect.NAME EVENT_CLASS_NAME,
+        NULL                                         EVENT_TYPE_CODE,
+        --  aeh.event_type_code EVENT_TYPE_CODE,
+        NULL                                         EVENT_TYPE_NAME,
+        --  xet.NAME EVENT_TYPE_NAME,
+        NULL                                         GL_BATCH_NAME,
+        -- gjb.NAME GL_BATCH_NAME,
+        To_char (gjb.posted_date, 'YYYY-MM-DD')      POSTED_DATE,
+        gjh.name                                     GL_JE_NAME,
+        gjh.external_reference                       EXTERNAL_REFERENCE,
+        NULL                                         GL_LINE_NUMBER,
+        --  gjl.je_line_num GL_LINE_NUMBER,
+        NULL                                         LINE_NUMBER,
+        --  ael.displayed_line_number LINE_NUMBER,
+        NULL                                         ORIG_LINE_NUMBER,
+        -- ael.ae_line_num ORIG_LINE_NUMBER,
+        NULL                                         ACCOUNTING_CLASS_CODE,
+        --ael.accounting_class_code ACCOUNTING_CLASS_CODE,
+        NULL                                         ACCOUNTING_CLASS_NAME,
+        --xlk2.meaning ACCOUNTING_CLASS_NAME,
+        ael.description                              LINE_DESCRIPTION,
+        ael.currency_code                            ENTERED_CURRENCY,
+        ael.entered_dr                               ENTERED_DR,
+        ael.entered_cr                               ENTERED_CR,
+        ael.unrounded_accounted_dr                   UNROUNDED_ACCOUNTED_DR,
+        ael.unrounded_accounted_cr                   UNROUNDED_ACCOUNTED_CR,
+        ael.accounted_dr                             ACCOUNTED_DR,
+        ael.accounted_cr                             ACCOUNTED_CR,
+        ael.party_type_code                          PARTY_TYPE_CODE,
+        NULL                                         PARTY_TYPE,
+        gjh.ledger_id                                LEDGER_ID,
+        gjh.period_name                              PERIOD_NAME,
+        gjh.actual_flag                              BALANCE_TYPE_CODE,
+        cc.code_combination_id                       CODE_COMBINATION_ID,
+        cc.segment1                                  SEGMENT1,
+        cc.segment2                                  SEGMENT2,
+        cc.segment3                                  SEGMENT3,
+        cc.segment4                                  SEGMENT4,
+        cc.segment5                                  SEGMENT5,
+        cc.segment6                                  SEGMENT6,
+        cc.segment7                                  SEGMENT7,
+        aeh.doc_sequence_value                       Voucher_Number,
+        CASE
+          WHEN aeh.je_category_name IN ( 'Sales Invoices', 'Credit Memos',
+                                         'Debit Memos'
+                                          ) THEN
+          (SELECT hp.party_name
+           FROM
+          hz_cust_accounts hz_account,
+          hz_parties hp
+                                                              WHERE
+          hz_account.cust_account_id = ael.party_id
+          AND hp.party_id = hz_account.party_id)
+          WHEN aeh.je_category_name IN ( 'Receipts' ) THEN (SELECT hp.party_name
+                                                            FROM
+          ar_cash_receipts_all cr,
+          hz_cust_accounts hz_account,
+          hz_parties hp
+                                                            WHERE
+          ent.source_id_int_1 = cr.cash_receipt_id
+          AND cr.pay_from_customer = hz_account.cust_account_id
+          AND hp.party_id = hz_account.party_id)
+          WHEN aeh.je_category_name IN( 'Purchase Invoices' ) THEN
+          (SELECT hp.party_name
+           FROM
+        ap_invoices_all aia,
+        hz_parties hp
+                                                                    WHERE
+          ent.source_id_int_1 = aia.invoice_id
+          AND hp.party_id = aia.party_id)
+          WHEN GJH.je_source IN ( 'Spreadsheet', 'Manual', 'Allocations',
+                                  'AutoCopy' )
+        THEN gjh.created_by
+        END                                          Customer_Name,
+        /* CASE 
+                                 WHEN aeh.je_category_name IN ( 
+                                      'Sales Invoices', 'Credit Memos', 
+                                      'Debit Memos' ) 
+                               THEN (SELECT ct.br_amount 
+                               FROM   ra_customer_trx_all ct 
+                               WHERE  ent.source_id_int_1 = ct.customer_trx_id 
+                                      AND ent.ledger_id = ct.set_of_books_id) 
+                                 WHEN aeh.je_category_name IN ( 'Receipts' ) THEN 
+                                 (SELECT cr.amount 
+                                  FROM 
+                                 ar_cash_receipts_all cr 
+                                                                                 WHERE 
+                                 ent.source_id_int_1 = cr.cash_receipt_id) 
+                                 WHEN aeh.je_category_name IN ( 'Adjustment' ) THEN ( 
+                                 SELECT amount FROM 
+                                 ar_adjustments_all 
+                                WHERE ent.source_id_int_1 = adjustment_id)
+                               WHEN aeh.je_category_name IN('Purchase Invoices') THEN
+                                 (SELECT aia.invoice_amount
+                     FROM ap_invoices_all aia
+                     WHERE ent.source_id_int_1 = aia.invoice_id)             
+                               END Trans_Amount, */
+        --(NVL(ael.accounted_dr,0) - NVL(ael.accounted_cr,0)) Trans_Amount,
+        CASE
+          WHEN aeh.je_category_name IN ( 'Sales Invoices', 'Credit Memos',
+                                         'Debit Memos'
+                                       ) THEN
+          Nvl((SELECT ( extended_amount *- 1
+                      )
+        FROM   ra_customer_trx_lines_all rctla
+        WHERE  rctla.customer_trx_line_id = trx_dist.customer_trx_line_id), (
+          Nvl
+          (
+        ael.accounted_dr, 0) - Nvl(ael.accounted_cr, 0) ))
+        END                                          Trans_Amount,
+        CASE ---1 Added by Ashutosh to fix Negative value issue.
+          WHEN aeh.je_category_name IN ( 'Sales Invoices', 'Credit Memos',
+                                         'Debit Memos'
+                                       ) THEN (SELECT (rctla.description ||'-'|| rctla.line_number) description
+        FROM   ra_customer_trx_all ct,
+               ra_customer_trx_lines_all rctla
+        WHERE  1 = 1
+               AND ent.source_id_int_1 = ct.customer_trx_id
+               AND ct.customer_trx_id = rctla.customer_trx_id
+               AND rctla.customer_trx_line_id = trx_dist.customer_trx_line_id
+               AND ent.ledger_id = ct.set_of_books_id
+               AND trx_dist.customer_trx_line_id IS NOT NULL
+               AND rctla.line_type = 'LINE')
+			   when aeh.je_category_name = 'Misc Receipts' then 
+			   (select artl.name 
+				from ar_receivables_trx_all artl , ar_cash_receipts_all acr
+					where artl.RECEIVABLES_TRX_ID =  acr. RECEIVABLES_TRX_ID
+ 							--and acr.RECEIPT_NUMBER = ent.transaction_number
+							and ent.SOURCE_ID_INT_1 = acr.CASH_RECEIPT_ID) 
+        END                                          Trans_Description,
+        ps.effective_period_num,
+        ps.adjustment_period_flag,
+		case when aeh.je_category_name = 'Credit Memos' then
+		(select rct.trx_number from ra_customer_trx_all rctc, ra_customer_trx_all rct
+ where rctc.PREVIOUS_CUSTOMER_TRX_ID = rct.CUSTOMER_TRX_ID
+ and rctc.trx_number = ent.transaction_number)
+ else null
+		end
+		ASSOCIATED_DOC_NUM,ent.SOURCE_ID_INT_1 --AR doc
+        FROM   xla_ae_headers aeh,
+               xla_ae_lines ael,
+               xla_lookups xlk1,
+               xla_lookups xlk2,
+               xla_events xle,
+               xla_event_classes_tl xect,
+               xla_event_types_tl xet,
+               per_users fdu,
+               xla_transaction_entities ent,
+               fnd_application_tl fap,
+               fun_seq_versions fsv1,
+               fun_seq_versions fsv2,
+               fnd_document_sequences fns,
+               gl_je_categories_tl gjct,
+               gl_je_sources_tl gjst,
+               gl_daily_conversion_types gdct,
+               gl_import_references gir,
+               gl_je_lines gjl,
+               gl_je_headers gjh,
+               gl_je_batches gjb,
+               gl_code_combinations cc,
+               gl_ledgers gl,
+               gl_period_statuses ps,
+               ra_cust_trx_line_gl_dist_all trx_dist
+        --Added by Ashutosh on 18-FEB
+        WHERE  1 = 1
+               AND gjl.code_combination_id = cc.code_combination_id
+               --Commented by Ashutosh on 11-March as CC needs to be mapped from DIST in AR
+               AND gjl.je_header_id = gjh.je_header_id
+               AND gl.ledger_id = gjl.ledger_id
+               AND gjl.period_name = gjh.period_name
+               AND gjl.je_header_id = gir.je_header_id
+               AND gjl.je_line_num = gir.je_line_num
+               AND gjh.je_header_id = gir.je_header_id
+               AND gjh.status = 'P'
+               AND Nvl (gjh.je_from_sla_flag, 'N') IN ( 'Y', 'U' )
+               AND gjb.je_batch_id = gir.je_batch_id
+               AND gjb.status = 'P'
+               AND gir.gl_sl_link_id = ael.gl_sl_link_id
+               AND gir.gl_sl_link_table = ael.gl_sl_link_table
+               AND gjct.je_category_name = aeh.je_category_name
+               AND gjct.LANGUAGE = Userenv ('LANG')
+               AND gjst.je_source_name = gjh.je_source
+               AND gjst.LANGUAGE = Userenv ('LANG')
+               AND aeh.accounting_entry_status_code = 'F'
+               AND aeh.gl_transfer_status_code = 'Y'
+               AND ael.application_id = aeh.application_id
+               AND ael.ae_header_id = aeh.ae_header_id
+               AND xlk1.lookup_type(+) = 'XLA_FUNDS_STATUS'
+               AND xlk1.lookup_code(+) = aeh.funds_status_code
+               AND xlk2.lookup_type = 'XLA_ACCOUNTING_CLASS'
+               AND xlk2.lookup_code = ael.accounting_class_code
+               AND xle.application_id = aeh.application_id
+               AND xle.event_id = aeh.event_id
+               AND xet.application_id = aeh.application_id
+               AND xet.event_type_code = aeh.event_type_code
+               AND cc.chart_of_accounts_id =
+                   Nvl(:P_STRUCT_NUM, cc.chart_of_accounts_id
+                   )
+               AND &flex_secure = 'N'
+               AND xet.LANGUAGE = Userenv ('LANG')
+               AND xect.application_id = xet.application_id
+               AND xect.entity_code = xet.entity_code
+               AND xect.event_class_code = xet.event_class_code
+               AND xect.LANGUAGE = Userenv ('LANG')
+               AND ent.application_id = aeh.application_id
+               AND ent.entity_id = aeh.entity_id
+               AND fdu.username = ent.created_by
+               AND fap.application_id = aeh.application_id
+               AND fap.LANGUAGE = Userenv ('LANG')
+               AND gjl.period_name = ps.period_name
+               AND fsv1.seq_version_id(+) = aeh.completion_acct_seq_version_id
+               AND fsv2.seq_version_id(+) = aeh.close_acct_seq_version_id
+               AND fns.application_id(+) = aeh.application_id
+               AND fns.doc_sequence_id(+) = aeh.doc_sequence_id
+               AND gdct.conversion_type(+) = ael.currency_conversion_type
+               AND ent.source_id_int_1 = trx_dist.customer_trx_id
+               --Added by Ashutosh on 18th FEB
+                AND cc.code_combination_id = trx_dist.code_combination_id --Added by Ashutosh on 18th FEB
+               --AND trx_dist.customer_trx_line_id IS NOT NULL
+               --Added by Ashutosh on 18th FEB
+               AND aeh.je_category_name IN ( --Added by Ashutosh on 18th FEB
+                                           'Sales Invoices', 'Credit Memos',
+                                           'Debit Memos')
+               AND gl.name = Nvl (:p_ledger_name, gl.name)
+               AND gjl.effective_date BETWEEN :P_GL_DATE_FROM AND :P_GL_DATE_TO
+               AND gjh.posted_date BETWEEN :P_POSTED_DATE_FROM AND
+                                           :P_POSTED_DATE_TO
+               AND cc.segment1 = Nvl (:p_segment1, cc.segment1)
+               --AND cc.segment2 = NVL (:p_segment2, cc.segment2)
+               AND cc.segment2 BETWEEN Nvl (:p_segment2, cc.segment2) AND
+                                       Nvl (:p_segm2, cc.segment2)
+               AND cc.segment3 = Nvl (:p_segment3, cc.segment3)
+               AND cc.segment4 = Nvl (:p_segment4, cc.segment4)
+               AND cc.segment5 = Nvl (:p_segment5, cc.segment5)
+               AND Nvl (cc.segment6, 1) = Nvl (:p_segment6, Nvl (cc.segment6, 1)
+                                          )
+               AND Nvl (cc.segment7, 1) = Nvl (:p_segment7, Nvl (cc.segment7, 1)
+                                          )
+               AND gjst.je_source_name = Nvl (:p_je_source_name,
+                                         gjst.je_source_name)
+		UNION ALL
+		        --FOR AR Adjustment
+        SELECT DISTINCT
+/*+ index (ent XLA_TRANSACTION_ENTITIES_U1 ) index ( gjb GL_JE_BATCHES_U1 ) */
+        To_char (aeh.accounting_date, 'YYYY-MM-DD')  GL_DATE,
+        fdu.username                                 CREATED_BY,
+        To_char (aeh.creation_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     CREATION_DATE,
+        To_char (aeh.last_update_date, 'YYYY-MM-DD') LAST_UPDATE_DATE,
+        To_char (aeh.gl_transfer_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     GL_TRANSFER_DATE,
+        To_char (aeh.reference_date, 'YYYY-MM-DD')   REFERENCE_DATE,
+        To_char (aeh.completed_date, 'YYYY-MM-DD')--'YYYY-MM-DD"T"hh:mi:ss')
+                                                     COMPLETED_DATE,
+        ent.transaction_number                       TRANSACTION_NUMBER,
+        To_char (xle.transaction_date, 'YYYY-MM-DD') --'YYYY-MM-DD"T"hh:mi:ss')
+                                                     TRANSACTION_DATE,
+        NULL                                         DOCUMENT_CATEGORY,
+        fns.name                                     DOCUMENT_SEQUENCE_NAME,
+        NULL                                         APPLICATION_ID,
+        --aeh.application_id APPLICATION_ID,
+        fap.application_name                         APPLICATION_NAME,
+        NULL                                         HEADER_ID,
+        --  aeh.ae_header_id HEADER_ID,
+        aeh.description                              HEADER_DESCRIPTION,
+        gjct.user_je_category_name                   JE_CATEGORY_NAME,
+        gjst.user_je_source_name                     JE_SOURCE_NAME,
+        NULL                                         EVENT_ID,
+        -- xle.event_id EVENT_ID,
+        To_char (xle.event_date, 'YYYY-MM-DD')       EVENT_DATE,
+        xle.event_number                             EVENT_NUMBER,
+        NULL                                         EVENT_CLASS_CODE,
+        -- xet.event_class_code EVENT_CLASS_CODE,
+        NULL                                         EVENT_CLASS_NAME,
+        --  xect.NAME EVENT_CLASS_NAME,
+        NULL                                         EVENT_TYPE_CODE,
+        --  aeh.event_type_code EVENT_TYPE_CODE,
+        NULL                                         EVENT_TYPE_NAME,
+        --  xet.NAME EVENT_TYPE_NAME,
+        NULL                                         GL_BATCH_NAME,
+        -- gjb.NAME GL_BATCH_NAME,
+        To_char (gjb.posted_date, 'YYYY-MM-DD')      POSTED_DATE,
+        gjh.name                                     GL_JE_NAME,
+        gjh.external_reference                       EXTERNAL_REFERENCE,
+        NULL                                         GL_LINE_NUMBER,
+        --  gjl.je_line_num GL_LINE_NUMBER,
+        NULL                                         LINE_NUMBER,
+        --  ael.displayed_line_number LINE_NUMBER,
+        NULL                                         ORIG_LINE_NUMBER,
+        -- ael.ae_line_num ORIG_LINE_NUMBER,
+        NULL                                         ACCOUNTING_CLASS_CODE,
+        --ael.accounting_class_code ACCOUNTING_CLASS_CODE,
+        NULL                                         ACCOUNTING_CLASS_NAME,
+        --xlk2.meaning ACCOUNTING_CLASS_NAME,
+        ael.description                              LINE_DESCRIPTION,
+        ael.currency_code                            ENTERED_CURRENCY,
+        ael.entered_dr                               ENTERED_DR,
+        ael.entered_cr                               ENTERED_CR,
+        ael.unrounded_accounted_dr                   UNROUNDED_ACCOUNTED_DR,
+        ael.unrounded_accounted_cr                   UNROUNDED_ACCOUNTED_CR,
+        ael.accounted_dr                             ACCOUNTED_DR,
+        ael.accounted_cr                             ACCOUNTED_CR,
+        ael.party_type_code                          PARTY_TYPE_CODE,
+        NULL                                         PARTY_TYPE,
+        gjh.ledger_id                                LEDGER_ID,
+        gjh.period_name                              PERIOD_NAME,
+        gjh.actual_flag                              BALANCE_TYPE_CODE,
+        cc.code_combination_id                       CODE_COMBINATION_ID,
+        cc.segment1                                  SEGMENT1,
+        cc.segment2                                  SEGMENT2,
+        cc.segment3                                  SEGMENT3,
+        cc.segment4                                  SEGMENT4,
+        cc.segment5                                  SEGMENT5,
+        cc.segment6                                  SEGMENT6,
+        cc.segment7                                  SEGMENT7,
+        aeh.doc_sequence_value                       Voucher_Number,
+CASE
+          WHEN aeh.je_category_name IN ( 'Adjustment' ) THEN
+          (SELECT hp.party_name
+           FROM
+          hz_cust_accounts hz_account,
+          hz_parties hp
+                                                              WHERE
+          hz_account.cust_account_id = ael.party_id
+          AND hp.party_id = hz_account.party_id)
+        END                                          Customer_Name,
+        CASE
+          WHEN aeh.je_category_name IN ( 'Adjustment' ) THEN (
+          Nvl(ael.accounted_dr, 0) - Nvl(ael.accounted_cr, 0) )
+        END                                          Trans_Amount,
+null                                        Trans_Description,
+        ps.effective_period_num,
+        ps.adjustment_period_flag,
+		null ASSOCIATED_DOC_NUM,ent.SOURCE_ID_INT_1
+        FROM   xla_ae_headers aeh,
+               xla_ae_lines ael,
+               xla_lookups xlk1,
+               xla_lookups xlk2,
+               xla_events xle,
+               xla_event_classes_tl xect,
+               xla_event_types_tl xet,
+               per_users fdu,
+               xla_transaction_entities ent,
+               fnd_application_tl fap,
+               fun_seq_versions fsv1,
+               fun_seq_versions fsv2,
+               fnd_document_sequences fns,
+               gl_je_categories_tl gjct,
+               gl_je_sources_tl gjst,
+               gl_daily_conversion_types gdct,
+               gl_import_references gir,
+               gl_je_lines gjl,
+               gl_je_headers gjh,
+               gl_je_batches gjb,
+               gl_code_combinations cc,
+               gl_ledgers gl,
+               gl_period_statuses ps
+              --, ra_cust_trx_line_gl_dist_all trx_dist
+        --Added by Ashutosh on 18-FEB
+        WHERE  1 = 1
+               AND gjl.code_combination_id = cc.code_combination_id
+               --Commented by Ashutosh on 11-March as CC needs to be mapped from DIST in AR
+               AND gjl.je_header_id = gjh.je_header_id
+               AND gl.ledger_id = gjl.ledger_id
+               AND gjl.period_name = gjh.period_name
+               AND gjl.je_header_id = gir.je_header_id
+               AND gjl.je_line_num = gir.je_line_num
+               AND gjh.je_header_id = gir.je_header_id
+               AND gjh.status = 'P'
+               AND Nvl (gjh.je_from_sla_flag, 'N') IN ( 'Y', 'U' )
+               AND gjb.je_batch_id = gir.je_batch_id
+               AND gjb.status = 'P'
+               AND gir.gl_sl_link_id = ael.gl_sl_link_id
+               AND gir.gl_sl_link_table = ael.gl_sl_link_table
+               AND gjct.je_category_name = aeh.je_category_name
+               AND gjct.LANGUAGE = Userenv ('LANG')
+               AND gjst.je_source_name = gjh.je_source
+               AND gjst.LANGUAGE = Userenv ('LANG')
+               AND aeh.accounting_entry_status_code = 'F'
+               AND aeh.gl_transfer_status_code = 'Y'
+               AND ael.application_id = aeh.application_id
+               AND ael.ae_header_id = aeh.ae_header_id
+               AND xlk1.lookup_type(+) = 'XLA_FUNDS_STATUS'
+               AND xlk1.lookup_code(+) = aeh.funds_status_code
+               AND xlk2.lookup_type = 'XLA_ACCOUNTING_CLASS'
+               AND xlk2.lookup_code = ael.accounting_class_code
+               AND xle.application_id = aeh.application_id
+               AND xle.event_id = aeh.event_id
+               AND xet.application_id = aeh.application_id
+               AND xet.event_type_code = aeh.event_type_code
+               AND cc.chart_of_accounts_id =
+                   Nvl(:P_STRUCT_NUM, cc.chart_of_accounts_id
+                   )
+               AND &flex_secure = 'N'
+               AND xet.LANGUAGE = Userenv ('LANG')
+               AND xect.application_id = xet.application_id
+               AND xect.entity_code = xet.entity_code
+               AND xect.event_class_code = xet.event_class_code
+               AND xect.LANGUAGE = Userenv ('LANG')
+               AND ent.application_id = aeh.application_id
+               AND ent.entity_id = aeh.entity_id
+               AND fdu.username = ent.created_by
+               AND fap.application_id = aeh.application_id
+               AND fap.LANGUAGE = Userenv ('LANG')
+               AND gjl.period_name = ps.period_name
+               AND fsv1.seq_version_id(+) = aeh.completion_acct_seq_version_id
+               AND fsv2.seq_version_id(+) = aeh.close_acct_seq_version_id
+               AND fns.application_id(+) = aeh.application_id
+               AND fns.doc_sequence_id(+) = aeh.doc_sequence_id
+               AND gdct.conversion_type(+) = ael.currency_conversion_type
+               AND aeh.je_category_name ='Adjustment' 
+               AND gl.name = Nvl (:p_ledger_name, gl.name)
+               AND gjl.effective_date BETWEEN :P_GL_DATE_FROM AND :P_GL_DATE_TO
+               AND gjh.posted_date BETWEEN :P_POSTED_DATE_FROM AND
+                                           :P_POSTED_DATE_TO
+               AND cc.segment1 = Nvl (:p_segment1, cc.segment1)
+               --AND cc.segment2 = NVL (:p_segment2, cc.segment2)
+               AND cc.segment2 BETWEEN Nvl (:p_segment2, cc.segment2) AND
+                                       Nvl (:p_segm2, cc.segment2)
+               AND cc.segment3 = Nvl (:p_segment3, cc.segment3)
+               AND cc.segment4 = Nvl (:p_segment4, cc.segment4)
+               AND cc.segment5 = Nvl (:p_segment5, cc.segment5)
+               AND Nvl (cc.segment6, 1) = Nvl (:p_segment6, Nvl (cc.segment6, 1)
+                                          )
+               AND Nvl (cc.segment7, 1) = Nvl (:p_segment7, Nvl (cc.segment7, 1)
+                                          )
+               AND gjst.je_source_name = Nvl (:p_je_source_name,
+                                         gjst.je_source_name)
+        UNION ALL
+        SELECT To_char (gjh.default_effective_date, 'YYYY-MM-DD')      GL_DATE,
+               fdu.username
+               CREATED_BY,
+               To_char (gjh.creation_date, 'YYYY-MM-DD"T"hh:mi:ss')
+               CREATION_DATE,
+               To_char (gjh.last_update_date, 'YYYY-MM-DD')
+               LAST_UPDATE_DATE
+               ,
+               NULL
+               GL_TRANSFER_DATE,
+               To_char (gjh.reference_date, 'YYYY-MM-DD')
+               REFERENCE_DATE,
+               NULL
+               COMPLETED_DATE,
+               NULL
+               TRANSACTION_NUMBER,
+               NULL
+               TRANSACTION_DATE
+               ,
+               NULL
+               DOCUMENT_CATEGORY
+               ,
+               NULL
+               DOCUMENT_SEQUENCE_NAME,
+               NULL
+               APPLICATION_ID,
+               NULL
+               APPLICATION_NAME
+               ,
+               gjh.je_header_id
+               HEADER_ID,
+               gjh.description
+               HEADER_DESCRIPTION,
+               gjct.user_je_category_name
+               JE_CATEGORY_NAME
+               ,
+               gjst.user_je_source_name
+               JE_SOURCE_NAME,
+               NULL                                                    EVENT_ID,
+               NULL
+               EVENT_DATE,
+               NULL
+               EVENT_NUMBER,
+               NULL
+               EVENT_CLASS_CODE
+               ,
+               NULL
+               EVENT_CLASS_NAME,
+               NULL
+               EVENT_TYPE_CODE,
+               NULL
+               EVENT_TYPE_NAME,
+               gjb.name
+               GL_BATCH_NAME,
+               To_char (gjb.posted_date, 'YYYY-MM-DD')
+               POSTED_DATE,
+               gjh.name
+               GL_JE_NAME,
+               gjh.external_reference
+               EXTERNAL_REFERENCE,
+               gjl.je_line_num
+               GL_LINE_NUMBER,
+               gjl.je_line_num
+               LINE_NUMBER,
+               gjl.je_line_num
+               ORIG_LINE_NUMBER
+               ,
+               NULL
+               ACCOUNTING_CLASS_CODE,
+               NULL
+               ACCOUNTING_CLASS_NAME,
+               gjl.description
+               LINE_DESCRIPTION
+               ,
+               gjh.currency_code
+               ENTERED_CURRENCY,
+               gjl.entered_dr
+               ENTERED_DR,
+               gjl.entered_cr
+               ENTERED_CR,
+               NULL
+               UNROUNDED_ACCOUNTED_DR,
+               NULL
+               UNROUNDED_ACCOUNTED_CR,
+               gjl.accounted_dr
+               ACCOUNTED_DR,
+               gjl.accounted_cr
+               ACCOUNTED_CR,
+               NULL
+               PARTY_TYPE_CODE,
+               NULL
+               PARTY_TYPE,
+               gjh.ledger_id                                           LEDGER_ID
+               ,
+               gjh.period_name
+               PERIOD_NAME,
+               gjh.actual_flag
+               BALANCE_TYPE_CODE
+               --,cc.balance_type                           BALANCE_TYPE
+               ,
+               cc.code_combination_id
+               CODE_COMBINATION_ID
+               --,cc.concatenated_segments                 ACCOUNTING_CODE_COMBINATION
+               ,
+               cc.segment1                                             SEGMENT1,
+               cc.segment2                                             SEGMENT2,
+               cc.segment3                                             SEGMENT3,
+               cc.segment4                                             SEGMENT4,
+               cc.segment5                                             SEGMENT5,
+               cc.segment6                                             SEGMENT6,
+               cc.segment7                                             SEGMENT7,
+               NULL
+               Voucher_Number,
+               CASE
+                 WHEN GJH.je_source IN ( 'Spreadsheet', 'Manual', 'Allocations',
+                                         'AutoCopy' )
+               THEN gjh.created_by
+                 ELSE NULL
+               END
+               Customer_Name,
+               ( Nvl(gjl.accounted_dr, 0) - Nvl(gjl.accounted_cr, 0) )
+               Trans_Amount,
+               gjl.description
+               Trans_Description
+               ,
+               ps.effective_period_num,
+               ps.adjustment_period_flag,
+			   null ASSOCIATED_DOC_NUM,null SOURCE_ID_INT_1
+        FROM   per_users fdu,
+               fun_seq_versions fsv1,
+               fun_seq_versions fsv2,
+               gl_je_categories_tl gjct,
+               gl_je_sources_tl gjst,
+               gl_daily_conversion_types gdct,
+               gl_je_lines gjl,
+               gl_je_headers gjh,
+               gl_je_batches gjb,
+               gl_code_combinations cc,
+               gl_ledgers gl,
+               gl_period_statuses ps
+        WHERE  1 = 1
+               AND gl.ledger_id = gjl.ledger_id
+               AND gjl.code_combination_id = cc.code_combination_id
+               AND gjh.je_header_id = gjl.je_header_id
+               AND Nvl (Decode (gjh.je_category, 'Accrual', 'N',
+                                                 gjh.je_from_sla_flag), 'N') =
+                   'N'
+               AND gjb.je_batch_id = gjh.je_batch_id
+               AND gjb.status = 'P'
+               AND fdu.username = gjb.created_by
+               AND fsv1.seq_version_id(+) = gjh.posting_acct_seq_version_id
+               AND fsv2.seq_version_id(+) = gjh.close_acct_seq_version_id
+               AND gjct.je_category_name = gjh.je_category
+               AND gjct.LANGUAGE = Userenv ('LANG')
+               AND gjst.je_source_name = gjh.je_source
+               AND gjst.LANGUAGE = Userenv ('LANG')
+               AND cc.chart_of_accounts_id =
+                   Nvl(:P_STRUCT_NUM, cc.chart_of_accounts_id
+                   )
+               AND &flex_secure = 'N'
+               AND gjl.period_name = ps.period_name
+               AND gdct.conversion_type(+) = gjh.currency_conversion_type
+               AND gl.name = Nvl (:p_ledger_name, gl.name)
+               AND gjl.effective_date BETWEEN :P_GL_DATE_FROM AND :P_GL_DATE_TO
+               AND gjh.posted_date BETWEEN :P_POSTED_DATE_FROM AND
+                                           :P_POSTED_DATE_TO
+               AND cc.segment1 = Nvl (:p_segment1, cc.segment1)
+               -- AND cc.segment2 = NVL (:p_segment2, cc.segment2)
+               AND cc.segment2 BETWEEN Nvl (:p_segment2, cc.segment2) AND
+                                       Nvl (:p_segm2, cc.segment2)
+               AND cc.segment3 = Nvl (:p_segment3, cc.segment3)
+               AND cc.segment4 = Nvl (:p_segment4, cc.segment4)
+               AND cc.segment5 = Nvl (:p_segment5, cc.segment5)
+               AND Nvl (cc.segment6, 1) = Nvl (:p_segment6, Nvl (cc.segment6, 1)
+                                          )
+               AND Nvl (cc.segment7, 1) = Nvl (:p_segment7, Nvl (cc.segment7, 1)
+                                          )
+               AND gjst.je_source_name = Nvl (:p_je_source_name,
+                                         gjst.je_source_name)
+        UNION ALL
+        SELECT
+/*+ index (ent XLA_TRANSACTION_ENTITIES_U1 ) index ( gjb GL_JE_BATCHES_U1 ) */
+        To_char (gjh.default_effective_date, 'YYYY-MM-DD')      GL_DATE,
+        fdu.username                                            CREATED_BY,
+        To_char (gjh.creation_date, 'YYYY-MM-DD"T"hh:mi:ss')    CREATION_DATE,
+        To_char (gjh.last_update_date, 'YYYY-MM-DD')            LAST_UPDATE_DATE
+        ,
+        NULL
+        GL_TRANSFER_DATE,
+        To_char (gjh.reference_date, 'YYYY-MM-DD')              REFERENCE_DATE,
+        NULL                                                    COMPLETED_DATE,
+        NULL
+        TRANSACTION_NUMBER,
+        NULL                                                    TRANSACTION_DATE
+        ,
+        NULL
+        DOCUMENT_CATEGORY,
+        NULL
+        DOCUMENT_SEQUENCE_NAME,
+        NULL                                                    APPLICATION_ID,
+        NULL                                                    APPLICATION_NAME
+        ,
+        gjh.je_header_id
+        HEADER_ID,
+        gjh.description
+        HEADER_DESCRIPTION,
+        gjct.user_je_category_name                              JE_CATEGORY_NAME
+        ,
+        gjst.user_je_source_name
+        JE_SOURCE_NAME,
+        NULL                                                    EVENT_ID,
+        NULL                                                    EVENT_DATE,
+        NULL                                                    EVENT_NUMBER,
+        NULL                                                    EVENT_CLASS_CODE
+        ,
+        NULL
+        EVENT_CLASS_NAME,
+        NULL                                                    EVENT_TYPE_CODE,
+        NULL                                                    EVENT_TYPE_NAME,
+        gjb.name                                                GL_BATCH_NAME,
+        To_char (gjb.posted_date, 'YYYY-MM-DD')                 POSTED_DATE,
+        gjh.name                                                GL_JE_NAME,
+        gjh.external_reference
+        EXTERNAL_REFERENCE,
+        gjl.je_line_num                                         GL_LINE_NUMBER,
+        gjl.je_line_num                                         LINE_NUMBER,
+        gjl.je_line_num                                         ORIG_LINE_NUMBER
+        ,
+        NULL
+        ACCOUNTING_CLASS_CODE,
+        NULL
+        ACCOUNTING_CLASS_NAME,
+        gjl.description                                         LINE_DESCRIPTION
+        ,
+        gjh.currency_code
+        ENTERED_CURRENCY,
+        gjl.entered_dr                                          ENTERED_DR,
+        gjl.entered_cr                                          ENTERED_CR,
+        NULL
+        UNROUNDED_ACCOUNTED_DR,
+        NULL
+        UNROUNDED_ACCOUNTED_CR,
+        gjl.accounted_dr                                        ACCOUNTED_DR,
+        gjl.accounted_cr                                        ACCOUNTED_CR,
+        NULL                                                    PARTY_TYPE_CODE,
+        NULL                                                    PARTY_TYPE,
+        gjh.ledger_id                                           LEDGER_ID,
+        gjh.period_name                                         PERIOD_NAME,
+        gjh.actual_flag
+        BALANCE_TYPE_CODE
+        --  ,cc.balance_type                          BALANCE_TYPE
+        ,
+        cc.code_combination_id
+        CODE_COMBINATION_ID,
+        cc.segment1                                             SEGMENT1,
+        cc.segment2                                             SEGMENT2,
+        cc.segment3                                             SEGMENT3,
+        cc.segment4                                             SEGMENT4,
+        cc.segment5                                             SEGMENT5,
+        cc.segment6                                             SEGMENT6,
+        cc.segment7                                             SEGMENT7,
+        NULL                                                    Voucher_Number,
+        CASE
+          WHEN GJH.je_source IN ( 'Spreadsheet', 'Manual', 'Allocations',
+                                  'AutoCopy' )
+        THEN gjh.created_by
+          ELSE NULL
+        END                                                     Customer_Name,
+        ( Nvl(gjl.accounted_dr, 0) - Nvl(gjl.accounted_cr, 0) ) Trans_Amount,
+        gjl.description
+        Trans_Description,
+        ps.effective_period_num,
+        ps.adjustment_period_flag,
+		null ASSOCIATED_DOC_NUM,null SOURCE_ID_INT_1
+        -- Added by Jay for customisation of report on 27/01/2014
+        FROM   per_users fdu,
+               fnd_new_messages fnm,
+               fun_seq_versions fsv1,
+               fun_seq_versions fsv2,
+               gl_je_categories_tl gjct,
+               gl_je_sources_tl gjst,
+               gl_daily_conversion_types gdct,
+               gl_je_lines gjl,
+               gl_je_headers gjh,
+               gl_je_batches gjb --,xla_report_balances_gt           cc
+               ,
+               gl_code_combinations cc,
+               gl_ledgers gl,
+               gl_period_statuses ps
+        WHERE  1 = 1
+               AND gl.ledger_id = gjl.ledger_id
+               AND gjl.code_combination_id = cc.code_combination_id
+               AND gjh.je_header_id = gjl.je_header_id
+               --AND   NVL(gjh.je_from_sla_flag,'N')    = 'U'
+               AND fnm.application_id = 101
+               AND fnm.language_code = Userenv ('LANG')
+               /* AND fnm.message_name IN
+                      ('PPOS0220',
+                       'PPOS0221',
+                       'PPOS0222',
+                       'PPOS0243',
+                       'PPOS0222_G',
+                       'PPOSO275') */
+               AND gjl.description = fnm.message_text
+               AND gjb.je_batch_id = gjh.je_batch_id
+               AND gjb.status = 'P'
+               AND fdu.username = gjb.created_by
+               AND fsv1.seq_version_id(+) = gjh.posting_acct_seq_version_id
+               AND fsv2.seq_version_id(+) = gjh.close_acct_seq_version_id
+               AND gjct.je_category_name = gjh.je_category
+               AND cc.chart_of_accounts_id =
+                   Nvl(:P_STRUCT_NUM, cc.chart_of_accounts_id
+                   )
+               AND &flex_secure = 'N'
+               AND gjct.LANGUAGE = Userenv ('LANG')
+               AND gjst.je_source_name = gjh.je_source
+               AND gjst.LANGUAGE = Userenv ('LANG')
+               AND gjl.period_name = ps.period_name
+               AND gdct.conversion_type(+) = gjh.currency_conversion_type
+               AND NOT EXISTS (SELECT 'x'
+                               FROM   gl_import_references gir
+                               WHERE  gir.je_header_id = gjl.je_header_id
+                                      AND gir.je_line_num = gjl.je_line_num)
+               AND gl.name = Nvl (:p_ledger_name, gl.name)
+               AND gjl.effective_date BETWEEN :P_GL_DATE_FROM AND :P_GL_DATE_TO
+               AND gjh.posted_date BETWEEN :P_POSTED_DATE_FROM AND
+                                           :P_POSTED_DATE_TO
+               AND cc.segment1 = Nvl (:p_segment1, cc.segment1)
+               --AND cc.segment2 = NVL (:p_segment2, cc.segment2)
+               AND cc.segment2 BETWEEN Nvl (:p_segment2, cc.segment2) AND
+                                       Nvl (:p_segm2, cc.segment2)
+               AND cc.segment3 = Nvl (:p_segment3, cc.segment3)
+               AND cc.segment4 = Nvl (:p_segment4, cc.segment4)
+               AND cc.segment5 = Nvl (:p_segment5, cc.segment5)
+               AND Nvl (cc.segment6, 1) = Nvl (:p_segment6, Nvl (cc.segment6, 1)
+                                          )
+               AND Nvl (cc.segment7, 1) = Nvl (:p_segment7, Nvl (cc.segment7, 1)
+                                          )
+               AND gjst.je_source_name = Nvl (:p_je_source_name,
+                                         gjst.je_source_name))
+       TABLE1
+WHERE  1 = 1
+       AND TABLE1.balance_type_code = Nvl (:p_balance_type_code,
+                                      table1.balance_type_code)
+       AND TABLE1.segment3 BETWEEN Nvl (:p_account_from, TABLE1.segment3) AND
+                                   Nvl (
+                                   :p_account_to, TABLE1.segment3)
+       AND TABLE1.segment5 BETWEEN Nvl (:p_local_account_from, TABLE1.segment5)
+                                   AND
+           Nvl (:p_local_account_to, TABLE1.segment5)
+       AND TABLE1.segment6 BETWEEN Nvl (:p_asset_from, TABLE1.segment6) AND Nvl
+                                   (
+                                   :p_asset_to, TABLE1.segment6)
+       AND TABLE1.segment7 BETWEEN Nvl (:p_spare_from, TABLE1.segment7) AND Nvl
+                                   (
+                                   :p_spare_to, TABLE1.segment7)
+       AND table1.effective_period_num BETWEEN
+           Nvl(:p_period_from, table1.effective_period_num) AND
+               Nvl(:p_period_to, table1.effective_period_num)
+       AND table1.adjustment_period_flag =
+               Decode(:p_adjustment_flag, 'Y', 'N',
+                                      table1.adjustment_period_flag)
+--AND TABLE1.TRANSACTION_NUMBER = 'ADFDI 18'
+--AND TABLE1.GL_BATCH_NAME = 'Payables A 158553000001 158553 N'

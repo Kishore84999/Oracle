@@ -1,0 +1,113 @@
+/******************************************************************    
+Date             Developer          Version               Description    
+ 29/06/2020    Ashutosh jain          1.0                   PCC AP Invoice Detail Report 
+ ****************************************************************/ 
+SELECT distinct APS.vendor_name                                                AS 
+       SUPPLIER_NAME, 
+       ( GCC.segment1 
+         || '.' 
+         || GCC.segment2 
+         || '.' 
+         || GCC.segment3 
+         || '.' 
+         || GCC.segment4 
+         || '.' 
+         || GCC.segment5 
+         || '.' 
+         || GCC.segment6 
+         || '.' 
+         || GCC.segment7 )                                            AS 
+       ACCOUNTING_FLEXFIELD, 
+TO_CHAR (APIA.terms_date, 'dd-Mon-yyyy', 'NLS_DATE_LANGUAGE=ENGLISH')	   AS 
+       INVOICE_RECEIVED_DATE,                  
+TO_CHAR (APIA.invoice_date, 'dd-Mon-yyyy', 'NLS_DATE_LANGUAGE=ENGLISH')	   AS 
+       INVOICE_DATE, 
+       POH.segment1                                                   AS 
+       PO_NUMBER, 
+       POH.revision_num                                               AS VER_NO, 
+       APIA.doc_sequence_value                                        AS 
+       VOUCHER_NUMBER, 
+       APIA.invoice_num                                               AS 
+       INVOICE_NUMBER, 
+       Nvl (APIDA.amount, 0)                                          AS 
+       DISTRIBUTION_AMOUNT, 
+       APIDA.description                                              AS 
+       DESCRIPTION, 
+       Nvl (APIA.invoice_amount, 0)                                   AS 
+       INVOICE_AMOUNT,                
+TO_CHAR (APPSA.due_date, 'dd-Mon-yyyy', 'NLS_DATE_LANGUAGE=ENGLISH')		   AS 
+       PAYMENT_DUE_DATE, 
+TO_CHAR (pmt.check_date, 'dd-Mon-yyyy', 'NLS_DATE_LANGUAGE=ENGLISH')	   AS 
+       PAID_DATE, 
+       pmt.check_number                                              AS 
+       CHEQUE_BACS_NO, 
+       Nvl (APIA.amount_paid, 0)                                      AS 
+       INVOICE_AMOUNT_PAID, 
+       Nvl (APIA.invoice_amount, 0) - Nvl (APIA.amount_paid, 0)       AS 
+       INVOICE_AMOUNT_REMAINING, 
+       ( ap_invoices_pkg.Get_approval_status (APIA.invoice_id, 
+         APIA.invoice_amount, 
+           APIA.payment_status_flag, APIA.invoice_type_lookup_code) ) AS 
+       INVOICE_APPROVAL_STATUS, 
+       Nvl2 (APIDA.po_distribution_id, 0, APIDA.amount)               AS C_6, 
+       Nvl2 (APIDA.po_distribution_id, APIDA.amount, 0)               AS C_5 
+--, (MCB.SEGMENT1 || '.' || MCB.SEGMENT2) AS ITEM_CATEGORY 
+FROM   gl_code_combinations GCC, 
+       po_distributions PDA, 
+       po_lines POL, 
+       po_headers POH, 
+       --MTL_CATEGORIES_B MCB, 
+       ap_invoices_all APIA, 
+       ap_invoice_distributions_all APIDA, 
+       -- ap_invoice_payments_all APIPA, 
+       -- ap_checks_all APCA, 
+      (select aipa.invoice_id        
+              ,aipa.check_id
+              ,aca.check_number
+              ,aca.check_date
+              ,aca.vendor_name
+              ,aca.vendor_site_code
+       from ap_invoice_payments_all aipa
+            ,ap_checks_all aca
+       where aipa.check_id = aca.check_id(+)
+       ) pmt,      
+       ap_payment_schedules_all APPSA, 
+       poz_suppliers_v APS 
+WHERE  APIA.invoice_id = APIDA.invoice_id 
+       -- AND MCB.CATEGORY_ID(+) = POL.CATEGORY_ID 
+       AND POH.po_header_id(+) = POL.po_header_id 
+       AND PDA.po_distribution_id(+) = APIDA.po_distribution_id 
+       AND GCC.code_combination_id = APIDA.dist_code_combination_id 
+       AND APIA.invoice_id = pmt.invoice_id(+) 
+       AND APIA.invoice_id = APPSA.invoice_id(+) 
+       -- AND APIPA.invoice_id=APPSA.invoice_id(+) 
+       -- AND APIPA.payment_num=APPSA.payment_num(+) 
+       -- AND APIPA.check_id = APCA.check_id(+)
+       AND PDA.po_line_id = POL.po_line_id(+) 
+       AND APS.vendor_id = APIA.vendor_id 
+   AND To_date(To_char(nvl(pmt.check_date,sysdate), 'MM-DD-YYYY'), 'MM-DD-YYYY') 
+           BETWEEN Nvl 
+           ( 
+           To_date (To_char (:P_PAID_DATE_FROM, 'MM-DD-YYYY'), 'MM-DD-YYYY'), 
+                   To_date 
+           ( 
+               To_char (nvl(pmt.check_date,sysdate), 'MM-DD-YYYY'), 'MM-DD-YYYY')) AND 
+               Nvl (To_date (To_char (:P_PAID_DATE_TO, 'MM-DD-YYYY'), 
+                    'MM-DD-YYYY'), 
+               To_date ( 
+                   To_char (nvl(pmt.check_date,sysdate), 'MM-DD-YYYY'), 'MM-DD-YYYY')) 
+       AND APS.vendor_name = Nvl(:P_SUPPLIER_NAME, APS.vendor_name) 
+       AND GCC.segment2 BETWEEN Nvl(:P_COST_CENTRE_FROM, GCC.segment2) AND Nvl( 
+                                :P_COST_CENTRE_TO, GCC.segment2) 
+       AND GCC.segment3 BETWEEN Nvl(:P_ACCOUNT_FROM, GCC.segment3) AND 
+                                Nvl(:P_ACCOUNT_TO, GCC.segment3) 
+       AND To_date (To_char (APIA.terms_date, 'MM-DD-YYYY'), 'MM-DD-YYYY') 
+           BETWEEN Nvl ( 
+               To_date (To_char (:P_INVOICE_RECEIVED_DATE_FROM, 'MM-DD-YYYY'), 
+               'MM-DD-YYYY' 
+               ), To_date (To_char (APIA.terms_date, 'MM-DD-YYYY'), 'MM-DD-YYYY' 
+                  )) AND 
+           Nvl 
+               (To_date (To_char (:P_INVOICE_RECEIVED_DATE_TO, 'MM-DD-YYYY'), 
+                'MM-DD-YYYY')                          , 
+               To_date (To_char (APIA.terms_date, 'MM-DD-YYYY'), 'MM-DD-YYYY'))

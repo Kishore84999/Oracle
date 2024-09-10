@@ -1,0 +1,72 @@
+SELECT
+	pay_element_types_f.base_element_name         AS BASE_ELEMENT_NAME ,
+	pay_element_links_f.element_link_name         AS ELEMENT_LINK_NAME ,
+	pay_element_links_f.standard_link_flag        AS STANDARD_LINK_FLAG	,
+	(
+		SELECT DISTINCT
+		haotl.NAME
+
+		FROM
+		HR_ORG_UNIT_CLASSIFICATIONS_F hac,
+		HR_ALL_ORGANIZATION_UNITS_F hao,
+		HR_ORGANIZATION_UNITS_F_TL haotl
+		WHERE
+		haotl.ORGANIZATION_ID = pay_element_criteria.organization_id 
+		AND hao.ORGANIZATION_ID = hac.ORGANIZATION_ID 
+		AND hao.ORGANIZATION_ID = haotl.ORGANIZATION_ID 
+		AND hao.EFFECTIVE_START_DATE BETWEEN hac.EFFECTIVE_START_DATE AND hac.EFFECTIVE_END_DATE 
+		AND haotl.LANGUAGE = USERENV('LANG')
+		AND hac.CLASSIFICATION_CODE = 'DEPARTMENT'
+	) AS DEP_NAME ,
+	--pay_element_criteria.organization_id          AS ORGANIZATION_ID ,
+	
+	(
+		SELECT DISTINCT
+		haotl.NAME
+
+		FROM
+		HR_ORG_UNIT_CLASSIFICATIONS_F hac,
+		HR_ALL_ORGANIZATION_UNITS_F hao,
+		HR_ORGANIZATION_UNITS_F_TL haotl
+		WHERE
+		haotl.ORGANIZATION_ID = pay_element_criteria.legal_employer_id 
+		AND hao.ORGANIZATION_ID = hac.ORGANIZATION_ID 
+		AND hao.ORGANIZATION_ID = haotl.ORGANIZATION_ID 
+		AND hao.EFFECTIVE_START_DATE BETWEEN hac.EFFECTIVE_START_DATE AND hac.EFFECTIVE_END_DATE 
+		AND haotl.LANGUAGE = USERENV('LANG') 
+		AND hac.CLASSIFICATION_CODE = 'HCM_LEMP'
+	) AS LEMP_NAME ,
+	--pay_element_criteria.legal_employer_id        AS LEGAL_EMPLOYER_ID ,
+	(
+	SELECT Location_Name
+	FROM
+	PER_LOCATION_DETAILS_F_TL PLDFT,
+	PER_LOCATION_DETAILS_F PLDF ,
+	PER_LOCATIONS PL
+	WHERE
+	PLDFT.Language = 'US'
+	AND PLDFT.LOCATION_DETAILS_ID = PLDF.LOCATION_DETAILS_ID
+	AND PL.LOCATION_ID = PLDF.LOCATION_ID
+	AND PL.LOCATION_ID = pay_element_criteria.location_id
+	) 											  AS Location_Name , 
+	pay_element_criteria.employment_category      AS EMPLOYMENT_CATEGORY ,
+	pay_element_criteria.payroll_stat_unit_id     AS PAYROLL_STAT_UNIT_ID,
+	--pay_element_types_f.legislative_data_group_id AS LEGISLATIVE_DATA_GROUP_ID ,
+	--pay_element_criteria.job_id                   AS JOB_ID ,
+	--pay_element_criteria.payroll_id               AS PAYROLL_ID ,
+	--pay_element_criteria.people_group_id          AS PEOPLE_GROUP_ID ,
+	--pay_element_criteria.position_id              AS POSITION_ID ,
+	--pay_element_criteria.relationship_type_id     AS RELATIONSHIP_TYPE_ID ,
+	--pay_element_criteria.location_id              AS LOCATION_ID ,
+PAY_ELEMENT_LINKS_F.last_update_date,
+PAY_ELEMENT_LINKS_F .last_updated_by
+	
+FROM   
+	FUSION.pay_element_criteria PAY_ELEMENT_CRITERIA ,
+	FUSION.pay_element_links_f PAY_ELEMENT_LINKS_F ,
+	FUSION.pay_element_types_f PAY_ELEMENT_TYPES_F
+	
+WHERE  
+	pay_element_types_f.element_type_id = pay_element_links_f.element_type_id
+	AND pay_element_links_f.element_criteria_id = pay_element_criteria.element_criteria_id
+	--AND pay_element_types_f.base_element_name LIKE 'RAR Annual Leave Ded%Result%'

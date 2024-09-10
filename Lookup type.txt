@@ -1,0 +1,9 @@
+select a2.lookup_type,
+  a2.meaning "Lookup Type Meaning",
+  a2.description "Lookup Type Description",
+  a1.LOOKUP_CODE,
+  a1.meaning "Lookup Value Meaning",
+  a1.description "Lookup Value Description"
+  from fnd_lookup_values a1,fnd_lookup_types_VL a2
+  where a1.lookup_type = 'ORA_HRX_GB_CO_ISSUE_AUTHORITY'
+  and a1.lookup_type=a2.lookup_type
